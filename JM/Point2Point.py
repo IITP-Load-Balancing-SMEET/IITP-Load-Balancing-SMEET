@@ -61,9 +61,9 @@ class Test:
         self.world.tick()
 
 
-        # while True: 
-        #     self.world.tick()
-        #     # traffic_manager.set_path(vehicle,route)
+        while True: 
+             self.world.tick()
+             traffic_manager.set_path(vehicle,route)
             
 
 
