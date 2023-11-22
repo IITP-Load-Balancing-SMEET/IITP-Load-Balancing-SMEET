@@ -4,4 +4,6 @@ NUM_NV: 10 # nearby vehicle
 
 NUM_FOLLOWER: 3 # following vehicle
 
+난폭도
+
 Pattern: [merge ,creation, split]

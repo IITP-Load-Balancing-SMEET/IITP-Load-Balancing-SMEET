@@ -174,17 +174,6 @@ class SCENARIO:
                 self.world.debug.draw_point(
                     point, size=0.2, life_time=0, color=carla.Color(0, 255, 0))
 
-    def lane_change(self, actor_idx: list, radius: float = 5.0):
-        for i in actor_idx:
-            actor = self.actor_list[i]
-            current_location = actor.get_location()
-            dist = math.sqrt((self.lane_change_location.x - current_location.x)
-                             ** 2 + (self.lane_change_location.y - current_location.y)**2)
-
-            if dist <= radius:
-                self.traffic_manager.random_left_lanechange_percentage(
-                    actor, 100)
-
     def stop(self, actor_idx: list, radius: float = 5.0, stop_duration: float = 5.0):
         for i in actor_idx:
             actor = self.actor_list[i]
