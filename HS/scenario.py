@@ -25,7 +25,7 @@ class SCENARIO:
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-        
+
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
     def set_world(self, synchronous=True):
@@ -129,29 +129,6 @@ class SCENARIO:
         except RuntimeError:
             raise KeyboardInterrupt
 
-    def stop(self, actor_idx: list, radius: float = 5.0, stop_duration: float = 5.0):
-        for i in actor_idx:
-            actor = self.actor_list[i]
-            current_location = actor.get_location()
-            dist = math.sqrt((self.stop_location.x - current_location.x)
-                             ** 2 + (self.stop_location.y - current_location.y)**2)
-
-            if dist <= radius:
-                control = carla.VehicleControl()
-                control.throttle = 0.0
-                control.brake = 1.0
-                control.steer = 0.0
-
-                actor.set_autopilot(False)
-                actor.apply_control(control)
-
-                start_time = self.world.get_snapshot().timestamp.elapsed_seconds
-
-                while (self.world.get_snapshot().timestamp.elapsed_seconds - start_time) < stop_duration:
-                    self.world.tick()
-
-                actor.set_autopilot(True)
-
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr()
@@ -162,16 +139,7 @@ class SCENARIO:
         while True:
             self.world.tick()
             self.update_view(self.actor_list[0])
-
-            if self.lane_change_scenario:
-                self.lane_change(actor_idx=[1, 2], radius=5.0)
-
-            if self.lane_change_scenario2:
-                self.lane_change(actor_idx=[0], radius=5.0)
-
-            if self.stop_scenario:
-                self.stop(actor_idx=[1], radius=5.0, stop_duration=5.0)
-
+            
     def __del__(self):
         try:
             self.set_world(synchronous=False)
