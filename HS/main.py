@@ -1,9 +1,9 @@
-import sys
+import carla
 import math
 import random
-import carla
+import numpy as np
 from utils.helpers import *
-
+from sensor_setup import SETUP
 
 class SCENARIO:
     '''
@@ -30,47 +30,14 @@ class SCENARIO:
                          'vehicle.tesla.model3',
                          'vehicle.citroen.c3']
 
-    def __init__(self, xosc_path: str, map_name: str):
-        super().__init__(xosc_path=xosc_path)
+    def __init__(self):
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
-        self.lane_change_scenario = True if map_name == 'scenario05' else False
-        self.lane_change_scenario2 = True if map_name == 'scenario21' else False
-        self.stop_scenario = True if map_name == 'scenario11' else False
-        self.blinker_scenario = True if map_name == 'scenario18' else False
-        self.pedestiran_scenario = True if map_name == 'scenario06' else False
-        self.weather = self.weather_params['rainy' if map_name ==
-                                           'scenario10' else 'sunny']
-
         self.client = carla.Client('localhost', 2000)
-        self.world = self.client.load_world(map_name)
+        self.world = self.client.load_world('Town04')
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-
-        super().get_performance()
-        super().get_routeposition(self.map)
-
-        if self.lane_change_scenario:
-            self.lane_change_location = self.map.get_waypoint_xodr(
-                road_id=6, lane_id=2, s=140).transform.location
-        
-        elif self.lane_change_scenario2:
-            self.lane_change_location = self.map.get_waypoint_xodr(road_id=2, lane_id=-1, s=290.0).transform.location
-
-        elif self.stop_scenario:
-            self.stop_location = self.map.get_waypoint_xodr(road_id=10, lane_id=1, s=11).transform.location
-
-        elif self.blinker_scenario:
-            self.blinker_location = [self.map.get_waypoint_xodr(road_id=1, lane_id=-1, s=300).transform.location,
-                                     self.map.get_waypoint_xodr(road_id=2, lane_id=1, s=130).transform.location]
-
-        elif self.pedestiran_scenario:
-            self.pedestrian_location = [self.map.get_waypoint_xodr(road_id=21, lane_id=-1, s=16).transform, 
-                                        self.map.get_waypoint_xodr(road_id=23, lane_id=-1, s=10).transform]
-
-        else:
-            pass
 
     def set_world(self, synchronous=True):
         settings = self.world.get_settings()
@@ -85,25 +52,11 @@ class SCENARIO:
         self.traffic_manager = self.client.get_trafficmanager()
         self.traffic_manager.set_synchronous_mode(synchronous)
 
+    def spawn_ego(self):
+        spawn_points = self.map.get_spwan_points()
+        ego_bp = self.bp.find('vehicle.lincoln.mkz_2017')
+        ego_bp = self.world.spawn_actor(ego_bp, np.random.choice(spawn_points))
     def spawn_actor(self):
-        if self.pedestiran_scenario:
-            start, end = self.pedestrian_location[0], self.pedestrian_location[1]
-
-            start.location.z += 4.0
-            end.location.z += 4.0
-
-            for _ in range(3): # 3 pedestirans
-                start.location.x += 1.5
-                walker_bp = random.choice(self.bp.filter('walker.*'))
-                walker = self.world.spawn_actor(walker_bp, start)
-
-                control = carla.WalkerControl()
-                control.speed = 0.5  # Set the speed of the walker (in m/s)
-                control.direction.x = -1.0
-                walker.apply_control(control)
-
-                self.walker_list.append(walker)
-
 
         for entity_ref in self.vehicle_dict.keys():
             selected_vehicle_bp = random.choice(self.vehicle_catalogue)
@@ -155,64 +108,16 @@ class SCENARIO:
         try:
             transform = actor.get_transform()
             self.spectator.set_transform(carla.Transform(
-                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15)))
+                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15.0, yaw=transform.rotation.yaw)))
 
         except RuntimeError:
             raise KeyboardInterrupt
-
-    def visualize_specific_point(self):
-        if self.lane_change_scenario:
-            self.world.debug.draw_point(
-                self.lane_change_location, size=0.2, life_time=0, color=carla.Color(0, 255, 0))
-
-        if self.stop_scenario:
-            self.world.debug.draw_point(
-                self.stop_location, size=0.2, life_time=0, color=carla.Color(0, 255, 0))
-
-        if self.blinker_scenario:
-            for point in self.blinker_location:
-                self.world.debug.draw_point(
-                    point, size=0.2, life_time=0, color=carla.Color(0, 255, 0))
-
-    def lane_change(self, actor_idx: list, radius: float = 5.0):
-        for i in actor_idx:
-            actor = self.actor_list[i]
-            current_location = actor.get_location()
-            dist = math.sqrt((self.lane_change_location.x - current_location.x)
-                             ** 2 + (self.lane_change_location.y - current_location.y)**2)
-
-            if dist <= radius:
-                self.traffic_manager.random_left_lanechange_percentage(
-                    actor, 100)
-
-    def stop(self, actor_idx: list, radius: float = 5.0, stop_duration: float = 5.0):
-        for i in actor_idx:
-            actor = self.actor_list[i]
-            current_location = actor.get_location()
-            dist = math.sqrt((self.stop_location.x - current_location.x)
-                             ** 2 + (self.stop_location.y - current_location.y)**2)
-
-            if dist <= radius:
-                control = carla.VehicleControl()
-                control.throttle = 0.0
-                control.brake = 1.0
-                control.steer = 0.0
-
-                actor.set_autopilot(False)
-                actor.apply_control(control)
-
-                start_time = self.world.get_snapshot().timestamp.elapsed_seconds
-
-                while (self.world.get_snapshot().timestamp.elapsed_seconds - start_time) < stop_duration:
-                    self.world.tick()
-
-                actor.set_autopilot(True)
 
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr()
         self.set_traffic_manger(synchronous)
-        self.spawn_actor()
+        # self.spawn_actor()
         self.follow_path()
         self.visualize_specific_point()
 
