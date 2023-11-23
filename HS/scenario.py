@@ -3,7 +3,7 @@ import math
 import random
 import carla
 from utils.helpers import *
-from sensor_setup import *
+from ego import *
 
 try:
     sys.path.append('/home/smeet/carla/PythonAPI/carla/')
@@ -46,10 +46,20 @@ class SCENARIO:
         weather = {0: carla.WeatherParameters.Default, 1: carla.WeatherParameters.ClearNoon, 2: carla.WeatherParameters.CloudyNoon,
                    3: carla.WeatherParameters.WetNoon, 4: carla.WeatherParameters.WetCloudyNoon, 5: carla.WeatherParameters.MidRainyNoon,
                    6: carla.WeatherParameters.HardRainNoon, 7: carla.WeatherParameters.SoftRainNoon, 8: carla.WeatherParameters.ClearSunset,
-                   9: carla.WeatherParameters.CloudySunet, 10: carla.WeatherParameters.WetSunset, 11:carla.WeatherParameters.WetCloudySunet,
-                   12:carla.WeatherParameters.MidRainSunet, 13: carla.WeatherParameters.HardRainSunet, 14: carla.WeatherParameters.SoftRainSunet}
+                   9: carla.WeatherParameters.CloudySunset, 10: carla.WeatherParameters.WetSunset, 11:carla.WeatherParameters.WetCloudySunset,
+                   12:carla.WeatherParameters.MidRainSunset, 13: carla.WeatherParameters.HardRainSunset, 14: carla.WeatherParameters.SoftRainSunset}
         
         self.world.set_weather(weather[key])
+        
+    def spawn_ego(self):
+        ego_bp = self.bp.find('vehicle.lincoln.mkz_2017')
+        ego_bp = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points()))
+        eg_bp.set_autopilot(True)
+        self.actor_list.append(ego_bp)
+        
+        self.ego = Ego(self.world, ego_bp)
+        self.ego.sensor_setup()
+        
 
     def spawn_actor(self):
         for entity_ref in self.vehicle_dict.keys():
@@ -125,7 +135,7 @@ class SCENARIO:
         try:
             transform = actor.get_transform()
             self.spectator.set_transform(carla.Transform(
-                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15, yaw=transform.rotation.yaw)))
+                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15)))
 
         except RuntimeError:
             raise KeyboardInterrupt
@@ -134,8 +144,9 @@ class SCENARIO:
         self.set_world(synchronous)
         self.set_weatehr()
         self.set_traffic_manger(synchronous)
-        self.spawn_actor()
-        self.follow_path()
+        self.spawn_ego()
+        #self.spawn_actor()
+        # self.follow_path()
 
         while True:
             self.world.tick()
@@ -144,9 +155,11 @@ class SCENARIO:
     def __del__(self):
         try:
             self.set_world(synchronous=False)
-            destroy_commands1 = [carla.command.DestroyActor(
-                actor.id) for actor in self.actor_list]
+            destroy_commands1 = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
+            destory_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.ego.actor_list]
+            
             self.client.apply_batch(destroy_commands1)
+            self.client.apply_batch(destory_commands2)
             print("Canceled by user...")
 
         except Exception as e:
