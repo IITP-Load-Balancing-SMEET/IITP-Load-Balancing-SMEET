@@ -1,0 +1,11 @@
+sensor_tick: 0.1
+
+Camera:  
+  img_width: 640
+  img_height: 480
+  fov: 110
+
+GNSS:
+  EARTH_RADIUS_MAJOR: 6378137.0
+  EARTH_RADIUS_MINOR: 6356752.3142
+  DRAD: 0.01745329251994329576923690768489

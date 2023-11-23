@@ -1,7 +1,0 @@
-Weather: carla.WeatherParameters.ClearNoon
-
-NUM_NV: 10 # nearby vehicle
-
-NUM_FOLLOWER: 3 # following vehicle
-
-Pattern: [merge ,creation, split]

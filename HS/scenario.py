@@ -1,37 +1,24 @@
-import carla
+import sys
 import math
 import random
-import numpy as np
+import carla
 from utils.helpers import *
-from sensor_setup import SETUP
+
+try:
+    sys.path.append('/home/smeet/carla/PythonAPI/carla/')
+    from agents.navigation.global_route_planner import GlobalRoutePlanner
+
+except IndexError:
+    raise("GlobalRoutePlanner not found")
+
 
 class SCENARIO:
-    '''
-    Args:
-        xosc_path(`str`): enter the xosc file path, for example `scenario01.xosc`
-
-        map_name(`str`): enter the map name, for example `scenario01`
-    '''
-    walker_list = []
-    actor_list = []
-    actor_dict = {}
-
-    weather_params = {'sunny': carla.WeatherParameters.ClearNoon,
-                      'rainy': carla.WeatherParameters.HardRainNoon,
-                      'sunset': carla.WeatherParameters.WetCloudySunset}
-
-    vehicle_catalogue = ['vehicle.audi.etron',
-                         'vehicle.bmw.grandtourer',
-                         'vehicle.citroen.c3',
-                         'vehicle.audi.tt',
-                         'vehicle.lincoln.mkz_2017',
-                         'vehicle.mercedes.coupe',
-                         'vehicle.mini.cooper_s_2021',
-                         'vehicle.tesla.model3',
-                         'vehicle.citroen.c3']
-
     def __init__(self):
-        print("Scenario start, Press Ctrl+C to stop the scenario")
+        self.actor_list = []
+        self.vehicle_dict = {}
+        self.vehicle_catalogue = ['vehicle.audi.etron', 'vehicle.bmw.grandtourer', 'vehicle.citroen.c3', 
+                                  'vehicle.audi.tt', 'vehicle.lincoln.mkz_2017', 'vehicle.mercedes.coupe', 
+                                  'vehicle.mini.cooper_s_2021', 'vehicle.tesla.model3', 'vehicle.citroen.c3']
 
         self.client = carla.Client('localhost', 2000)
         self.world = self.client.load_world('Town04')
@@ -39,24 +26,53 @@ class SCENARIO:
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
 
+        print("Scenario start, Press Ctrl+C to stop the scenario")
+
     def set_world(self, synchronous=True):
         settings = self.world.get_settings()
         settings.synchronous_mode = synchronous
         settings.fixed_delta_seconds = 0.05
         self.world.apply_settings(settings)
 
-    def set_weatehr(self):
-        self.world.set_weather(self.weather)
+    def set_weatehr(self, key=0):
+        '''
+        0 - Default        1 - ClearNoon         2 - CloudyNoon\\
+        3 - WetNoon        4 - WetCloudyNoon     5 - MidRainyNoon\\
+        6 - HardRainNoon   7 - SoftRainNoon      8 - ClearSunset\\
+        9 - CloudySunset   10 - WetSunset        11 - WetCloudySunset\\
+        12 - MidRainSunset 13 - HardRainSunset   14 - SoftRainSunset\\
+        '''
+        weather = {0: carla.WeatherParameters.Default, 1: carla.WeatherParameters.ClearNoon, 2: carla.WeatherParameters.CloudyNoon,
+                   3: carla.WeatherParameters.WetNoon, 4: carla.WeatherParameters.WetCloudyNoon, 5: carla.WeatherParameters.MidRainyNoon,
+                   6: carla.WeatherParameters.HardRainNoon, 7: carla.WeatherParameters.SoftRainNoon, 8: carla.WeatherParameters.ClearSunset,
+                   9: carla.WeatherParameters.CloudySunet, 10: carla.WeatherParameters.WetSunset, 11:carla.WeatherParameters.WetCloudySunet,
+                   12:carla.WeatherParameters.MidRainSunet, 13: carla.WeatherParameters.HardRainSunet, 14: carla.WeatherParameters.SoftRainSunet}
+        
+        self.world.set_weather(weather[key])
+
+    def spawn_actor(self):
+        for entity_ref in self.vehicle_dict.keys():
+            selected_vehicle_bp = random.choice(self.vehicle_catalogue)
+
+            property = self.vehicle_dict[entity_ref]
+
+            start, end = routes[0], routes[1]
+            start.location.z += 4.0
+            end.location.z += 4.0
+
+            vehicle_bp = self.bp.find(selected_vehicle_bp)
+            vehicle_bp = self.world.spawn_actor(
+                vehicle_bp, start)  # spawn actor
+
+            self.actor_list.append(vehicle_bp)
+            self.actor_dict[vehicle_bp.id] = property
+
+            self.traffic_manager.auto_lane_change(vehicle_bp, False)
+
 
     def set_traffic_manger(self, synchronous=True):
         self.traffic_manager = self.client.get_trafficmanager()
         self.traffic_manager.set_synchronous_mode(synchronous)
-
-    def spawn_ego(self):
-        spawn_points = self.map.get_spwan_points()
-        ego_bp = self.bp.find('vehicle.lincoln.mkz_2017')
-        ego_bp = self.world.spawn_actor(ego_bp, np.random.choice(spawn_points))
-    def spawn_actor(self):
 
         for entity_ref in self.vehicle_dict.keys():
             selected_vehicle_bp = random.choice(self.vehicle_catalogue)
@@ -108,7 +124,7 @@ class SCENARIO:
         try:
             transform = actor.get_transform()
             self.spectator.set_transform(carla.Transform(
-                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15.0, yaw=transform.rotation.yaw)))
+                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15, yaw=transform.rotation.yaw)))
 
         except RuntimeError:
             raise KeyboardInterrupt
@@ -117,32 +133,19 @@ class SCENARIO:
         self.set_world(synchronous)
         self.set_weatehr()
         self.set_traffic_manger(synchronous)
-        # self.spawn_actor()
+        self.spawn_actor()
         self.follow_path()
-        self.visualize_specific_point()
 
         while True:
             self.world.tick()
             self.update_view(self.actor_list[0])
-
-            if self.lane_change_scenario:
-                self.lane_change(actor_idx=[1, 2], radius=5.0)
-
-            if self.lane_change_scenario2:
-                self.lane_change(actor_idx=[0], radius=5.0)
-
-            if self.stop_scenario:
-                self.stop(actor_idx=[1], radius=5.0, stop_duration=5.0)
-
+            
     def __del__(self):
         try:
             self.set_world(synchronous=False)
             destroy_commands1 = [carla.command.DestroyActor(
                 actor.id) for actor in self.actor_list]
-            destroy_commands2 = [carla.command.DestroyActor(
-                walker.id) for walker in self.walker_list]
             self.client.apply_batch(destroy_commands1)
-            self.client.apply_batch(destroy_commands2)
             print("Canceled by user...")
 
         except Exception as e:
@@ -150,17 +153,8 @@ class SCENARIO:
 
 
 if __name__ == '__main__':
-    '''
-    <완성된 시나리오>
-        - 01, 02, 03, 05, 06-2, 07, 09, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
-
-    <유턴 시나리오>
-        - 해결 불가
-        - 04, 08
-    '''
     try:
-        scenario_num = "scenario21"
-        scenario = SCENARIO(xosc_path=f'./{scenario_num}/{scenario_num}.xosc', map_name=scenario_num)
+        scenario = SCENARIO()
         scenario.main()
 
     except KeyboardInterrupt:
