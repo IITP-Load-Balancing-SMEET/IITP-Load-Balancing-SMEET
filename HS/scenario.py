@@ -3,6 +3,7 @@ import math
 import random
 import carla
 from utils.helpers import *
+from sensor_setup import *
 
 try:
     sys.path.append('/home/smeet/carla/PythonAPI/carla/')
