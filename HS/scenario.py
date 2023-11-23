@@ -54,7 +54,7 @@ class SCENARIO:
     def spawn_ego(self):
         ego_bp = self.bp.find('vehicle.lincoln.mkz_2017')
         ego_bp = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points()))
-        eg_bp.set_autopilot(True)
+        ego_bp.set_autopilot(True)
         self.actor_list.append(ego_bp)
         
         self.ego = Ego(self.world, ego_bp)
