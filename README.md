@@ -7,9 +7,9 @@
 ![Screenshot from 2023-11-25 21-05-41](https://github.com/IITP-Load-Balancing-SMEET/IITP-Load-Balancing-SMEET/assets/86957779/a6282305-596f-4373-8b84-297cb273ce42)
 
 ## Radar
-![Screenshot from 2023-11-25 21-10-25](https://github.com/IITP-Load-Balancing-SMEET/IITP-Load-Balancing-SMEET/assets/86957779/fe8daefe-44a1-4ab0-81fe-846fcf30e988)
-
+![Screenshot from 2023-11-26 00-59-48](https://github.com/IITP-Load-Balancing-SMEET/IITP-Load-Balancing-SMEET/assets/86957779/d1d600ce-fb69-4a5a-81fe-832f674ced9d)
 
 ## RGB Camera
+![Screenshot from 2023-11-26 01-14-12](https://github.com/IITP-Load-Balancing-SMEET/IITP-Load-Balancing-SMEET/assets/86957779/dfc69fbc-8c62-41d3-b673-8c07f559f905)
 
 ## Depth Camera
