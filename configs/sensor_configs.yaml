@@ -1,15 +1,15 @@
 all_sensor_tick: 0.1
 
 CAMERA:
-  width: 640
-  height: 480
+  width: 1280
+  height: 720
   fov: 110
 
 GNSS:
   earth_radius_major: 6378137.0
   drad: 0.01745329251994329576923690768489
 
-LiDAR:
-  channel: 32
-  points_per_second: 56000
-  rotation_frequency: 10
+RADAR:
+  hfov: 60.0
+  vfov: 10.0
+  range: 60.0
