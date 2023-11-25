@@ -3,6 +3,9 @@ import queue
 from scenario import *
 from utils.helpers import *
 
+'''
+All sensors are following SAE coordinate system
+'''
 class EGO(SCENARIO):
     def __init__(self, yaml_path='/home/soup1997/IITP-Load-Balancing-SMEET/HS/configs/sensor_configs.yaml'):
         super().__init__()
