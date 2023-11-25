@@ -1,4 +1,5 @@
 import carla
+import queue
 from scenario import *
 from utils.helpers import *
 
@@ -25,11 +26,15 @@ class EGO(SCENARIO):
         self.r_hfov = sensor_config['RADAR']['hfov']
         self.r_range = sensor_config['RADAR']['range']
 
+        self.img_front = queue.Queue(maxsize=1)
+        self.img_left = queue.Queue(maxsize=1)
+        self.img_right = queue.Queue(maxsize=1)
+
     def spawn_ego(self, spawn_point=carla.Location(x=0.0, y=0.0, z=0.0)):
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
         
         self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points())) # map point 바꿔야함
-        # self.ego.set_autopilot(True)
+        self.ego.set_autopilot(True)
 
         self.actor_list.append(self.ego)
 
@@ -41,9 +46,8 @@ class EGO(SCENARIO):
         cam_bp.set_attribute("sensor_tick", str(self.tick))
 
         cam1_transform = carla.Transform(carla.Location(x=1.5, z=2.0))
-        cam2_transform = carla.Transform(carla.Location(x=1.5, y=1.0, z=2.0), carla.Rotataion(yaw=-15.0))
-        cam3_transform = carla.Transform(carla.Location(x=1.5, y=-1.0, z=2.0), carla.Rotation(yaw=15.0))
-        cam4_transform = carla.Transform(carla.Location(x=-1.5, z=2.0), carla.Rotation(yaw=180.0))
+        cam2_transform = carla.Transform(carla.Location(x=1.5, y=-2.0, z=2.0), carla.Rotation(yaw=-30.0))
+        cam3_transform = carla.Transform(carla.Location(x=1.5, y=2.0, z=2.0), carla.Rotation(yaw=30.0))
         
         # front
         cam1_ego = self.world.spawn_actor(cam_bp, 
@@ -61,22 +65,13 @@ class EGO(SCENARIO):
                                          attach_to=self.ego,
                                          attachment_type=carla.AttachmentType.Rigid) 
         
-        # back
-        cam4_ego = self.world.spawn_actor(cam_bp, 
-                                         cam4_transform, 
-                                         attach_to=self.ego,
-                                         attachment_type=carla.AttachmentType.Rigid) 
-        
-        cam1_ego.listen(self.rgb_callback1)
-        cam2_ego.listen(self.rgb_callback2)
-        cam3_ego.listen(self.rgb_callback3)
-        cam4_ego.listen(self.rgb_callback4)
+        cam1_ego.listen(self.img_front.put)
+        cam2_ego.listen(self.img_left.put)
+        cam3_ego.listen(self.img_right.put)
 
         self.actor_list.append(cam1_ego)
         self.actor_list.append(cam2_ego)
         self.actor_list.append(cam3_ego)
-        self.actor_list.append(cam4_ego)
-
 
     def spawn_depth_camera(self):
         dcam_bp = self.world.get_blueprint_library().find('sensor.camera.depth')
@@ -145,10 +140,18 @@ class EGO(SCENARIO):
 
         self.actor_list.append(radar_ego)
 
-    def rgb_callback(self, camera):
-        img = np.copy(camera.raw_data)
-        img = img.reshape(self.height, self.width, 4)
-        img = img[:, :, :3]
+    def img_callback(self):
+        img_front = self.img_front.get()
+        img_left = self.img_left.get()
+        img_right = self.img_right.get()
+
+        img_front = np.reshape(np.copy(img_front.raw_data), (self.height, self.width, 4))
+        img_left = np.reshape(np.copy(img_left.raw_data), (self.height, self.width, 4))
+        img_right = np.reshape(np.copy(img_right.raw_data), (self.height, self.width, 4))
+
+        all_img = np.concatenate((img_left, img_front, img_right), axis=1)
+
+        return all_img
 
     def depth_callback(self, camera):
         camera.convert(carla.ColorConverter.LogarithmicDepth)
@@ -214,13 +217,12 @@ class EGO(SCENARIO):
                 size=0.075,
                 life_time=0.06,
                 persistent_lines=False,
-                color=carla.Color(255, 255, 255))
+                color=carla.Color(255, 0, 0))
 
     def update_view(self):
         try:
             transform = self.ego.get_transform()
-            self.spectator.set_transform(carla.Transform(
-                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15)))
+            self.spectator.set_transform(carla.Transform(transform.location + carla.Location(x=-5.0, y=0.0, z=2.0)))
 
         except RuntimeError:
             raise KeyboardInterrupt
@@ -235,15 +237,28 @@ class EGO(SCENARIO):
         self.spawn_gnss()
         self.spawn_radar()
 
+        # OpenCV named window for display
+        cv2.namedWindow('All cameras', cv2.WINDOW_AUTOSIZE)
+
         while True:
             self.world.tick()
-            # self.update_view()
+            self.update_view()
+            all_img = self.img_callback()
+
+            cv2.imshow('All cameras', all_img)
+    
+            # Break loop if user presses q
+            if cv2.waitKey(0) == ord('q'):
+                raise(KeyboardInterrupt)
+            
 
     def __del__(self):
         self.set_world(synchronous=False)
         destroy_commands = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
         self.client.apply_batch(destroy_commands)
-        
+
+        super().__del__()  # 부모 클래스 소멸자 명시적 호출
+        cv2.destroyAllWindows()
         print("Canceled by user...")
 
 if __name__ == '__main__':

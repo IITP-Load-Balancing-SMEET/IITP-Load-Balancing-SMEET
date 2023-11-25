@@ -1,8 +1,8 @@
 all_sensor_tick: 0.1
 
 CAMERA:
-  width: 1280
-  height: 720
+  width: 640
+  height: 480
   fov: 110
 
 GNSS:
