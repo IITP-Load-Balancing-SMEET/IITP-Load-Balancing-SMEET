@@ -7,19 +7,29 @@ import open3d as o3d
 
 from utils.helpers import *
 
+
 class SCENARIO:
+    
     def __init__(self):
         self.actor_list = []
-
+        self.ego_list= []
+        self.nv_list = []
+        self.junction_list=[]
         self.client = carla.Client('localhost', 2000)
         self.world = self.client.load_world('Town04')
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-        
-        
-        # =============== Ego Sensor Parameters =============== #
+    
+        # =============== Vehicle Parameters =============== #
         args = arg_parse()
+        self.nv_num = 10
+
+        # ===================================================== #
+        
+
+
+        # =============== Ego Sensor Parameters =============== #
         sensor_config = parse_config_yaml(args.config_path)
         
         self.tick = sensor_config['all_sensor_tick']
@@ -33,6 +43,11 @@ class SCENARIO:
         self.earth_radius_major = sensor_config['GNSS']['earth_radius_major']
         self.drad = sensor_config['GNSS']['drad']
         self.is_first = True
+
+        ## Lidar Parameters
+        self.lidar_ch = sensor_config['LiDAR']['channel']
+        self.pps = sensor_config['LiDAR']['poinits_per_second']
+        self.lidar_rotation = sensor_config['LiDAR']['rotation_frequency']
         # ===================================================== #
         
         print("Scenario start, Press Ctrl+C to stop the scenario")
@@ -171,9 +186,17 @@ class SCENARIO:
         ego_bp = self.bp.find('vehicle.lincoln.mkz_2017')
         self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points()))
         self.actor_list.append(self.ego)
-        
+        self.ego_list.append(self.ego)
         self.sensor_setup()
         self.ego.set_autopilot(True)
+
+    def spawn_nv(self,n):
+        for i in range(len(n)):
+            ego_nv = self.bp.find('vehicle.lincoln.mkz_2017')
+            nv = self.world.spawn_actor(ego_nv, np.random.choice(self.map.get_spawn_points()))
+            self.actor_list.append(nv)
+            self.nv_list.append(nv)
+            self.nv.set_autopilot(True)
 
     def set_world(self, synchronous=True):
         settings = self.world.get_settings()
@@ -197,70 +220,39 @@ class SCENARIO:
         
         self.world.set_weather(weather[key])
 
-    def spawn_actor(self):
-        for entity_ref in self.vehicle_dict.keys():
-            selected_vehicle_bp = random.choice(self.vehicle_catalogue)
-
-            property = self.vehicle_dict[entity_ref]
-
-            start, end = routes[0], routes[1]
-            start.location.z += 4.0
-            end.location.z += 4.0
-
-            vehicle_bp = self.bp.find(selected_vehicle_bp)
-            vehicle_bp = self.world.spawn_actor(
-                vehicle_bp, start)  # spawn actor
-
-            self.actor_list.append(vehicle_bp)
-            self.actor_dict[vehicle_bp.id] = property
-
-            self.traffic_manager.auto_lane_change(vehicle_bp, False)
-
-
     def set_traffic_manger(self, synchronous=True):
         self.traffic_manager = self.client.get_trafficmanager()
         self.traffic_manager.set_synchronous_mode(synchronous)
 
-    def generate_path(self, actor: carla.Actor):
-        routes = self.actor_dict[actor.id][1]
-        routes = self.grp.trace_route(routes[0].location, routes[1].location)
-
-        return routes
-
-    def draw_path(self, routes):
-        for point in routes:
-            self.world.debug.draw_point(
-                point[0].transform.location, size=0.05, life_time=0, color=carla.Color(255, 0, 0))
-
-    def follow_path(self):
-        for actor in self.actor_list:
-            routes = self.generate_path(actor)
-
-            self.draw_path(routes)
-
-            start = routes[0][0].transform.location
-            start.x += 3.5
-            end = routes[-1][0].transform.location
-
-            path = [start, end]
-            self.traffic_manager.set_path(actor, path)
-
-        [actor.set_autopilot(True) for actor in self.actor_list[::-1]]
-
-    def update_view(self, actor: carla.Actor):
-        try:
-            transform = actor.get_transform()
-            self.spectator.set_transform(carla.Transform(
-                transform.location + carla.Location(x=-8.0, y=0.0, z=5.0), carla.Rotation(pitch=-15, yaw=transform.rotation.yaw)))
-
-        except RuntimeError:
-            raise KeyboardInterrupt
-
+    def junction_lidar_spawn(self):
+        '''
+            jucction 1 = x: 312 y: 170
+            junction 2 = x: 312 y: 247
+            junction 3 = x: 257 y: 170
+            junction 4 = x: 257 y: 247
+            junction 5 = x: 202 y: 170
+            junction 6 = x: 202 y: 247
+        '''
+        lidar_bp = self.world.get_blueprint_library().find('sensor.lidar.ray_cast')
+        lidar_bp.set_attribute('channerls',int(self.lidar_ch))
+        lidar_bp.set_attribute('channerls',int(self.pps))
+        lidar_bp.set_attribute('channerls',int(self.lidar_rotation))
+        
+        junction_lidar_1 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=170, z=3)))
+        junction_lidar_2 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=247, z=3)))
+        junction_lidar_3 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=257, y=170, z=3)))
+        junction_lidar_4 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=257, y=247, z=3)))
+        junction_lidar_5 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=170, z=3)))
+        junction_lidar_6 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=247, z=3)))
+        self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
+        
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr(key=0)
         self.set_traffic_manger(synchronous)
         self.spawn_ego()
+        if self.nv_num != 0:
+            self.spawn_nv(self.nv_num)
         #self.spawn_actor()
         # self.follow_path()
 

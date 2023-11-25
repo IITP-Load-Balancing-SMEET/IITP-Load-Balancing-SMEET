@@ -1,23 +1,12 @@
 ## This is the test file for carla simulator
-
+import os
 import numpy
 import sys
-import carla
 import glob
 import sys
-import copy
-import xml.etree.ElementTree as ET
-
+import carla
 try:
-    sys.path.append(glob.glob('/home/smeet/Desktop/Carla/Carla/carla/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
-        sys.version_info.major,
-        sys.version_info.minor,
-        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
-except IndexError:
-    pass
-
-try:
-    sys.path.append(glob.glob('/home/smeet/Desktop/Carla/Carla/PythonAPI/carla/dist/carla-*%d.%d-%s.egg' % (
+    sys.path.append(glob.glob('D:\CARLA_0.9.13\WindowsNoEditor\PythonAPI\carla\dist\carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
         sys.version_info.minor,
         'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
@@ -94,6 +83,4 @@ class Test:
 
 Te = Test('localhost',2000,10.0)
 
-Te.set_map("scenario01")
-
-Te.find_roadmarks()
+Te.set_map("Town04")

@@ -8,3 +8,8 @@ CAMERA:
 GNSS:
   earth_radius_major: 6378137.0
   drad: 0.01745329251994329576923690768489
+
+LiDAR:
+  channel: 32
+  points_per_second: 56000
+  rotation_frequency: 10
