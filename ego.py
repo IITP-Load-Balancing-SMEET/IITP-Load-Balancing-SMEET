@@ -7,7 +7,7 @@ from utils.helpers import *
 All sensors are following SAE coordinate system
 '''
 class EGO(SCENARIO):
-    def __init__(self, yaml_path='/home/soup1997/IITP-Load-Balancing-SMEET/HS/configs/sensor_configs.yaml'):
+    def __init__(self, yaml_path='./configs/sensor_configs.yaml'):
         super().__init__()
         sensor_config = parse_config_yaml(yaml_path)
         
@@ -266,7 +266,7 @@ class EGO(SCENARIO):
 
 if __name__ == '__main__':
     try:
-        ego = EGO(yaml_path="/home/soup1997/IITP-Load-Balancing-SMEET/configs/sensor_configs.yaml")
+        ego = EGO(yaml_path="./configs/sensor_configs.yaml")
         ego.main()
 
     except KeyboardInterrupt:

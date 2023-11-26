@@ -13,3 +13,8 @@ RADAR:
   hfov: 60.0
   vfov: 10.0
   range: 60.0
+
+Junction_LiDAR:
+  channel: 32
+  points_per_second: 56000
+  rotation_frequency: 10

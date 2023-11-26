@@ -4,11 +4,11 @@ import random
 import carla
 import numpy as np
 import open3d as o3d
-
+import os
 from utils.helpers import *
 
 class SCENARIO:
-    def __init__(self):
+    def __init__(self, yaml_path='./configs/sensor_configs.yaml'):
         self.junction_list=[]
         self.actor_list = []
 
@@ -17,7 +17,11 @@ class SCENARIO:
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-    
+        
+
+        self.sensor_config = parse_config_yaml(yaml_path)
+
+
         # =============== Vehicle Parameters =============== #
         self.nv_num = 10
         
@@ -77,9 +81,9 @@ class SCENARIO:
             junction 6 = x: 202 y: 247
         '''
         lidar_bp = self.world.get_blueprint_library().find('sensor.lidar.ray_cast')
-        lidar_bp.set_attribute('channerls',int(self.lidar_ch))
-        lidar_bp.set_attribute('channerls',int(self.pps))
-        lidar_bp.set_attribute('channerls',int(self.lidar_rotation))
+        lidar_bp.set_attribute('channerls',int(self.sensor_config['channel']))
+        lidar_bp.set_attribute('channerls',int(self.sensor_config['points_per_second']))
+        lidar_bp.set_attribute('channerls',int(self.sensor_config['rotation_frequency']))
         
         junction_lidar_1 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=170, z=3)))
         junction_lidar_2 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=247, z=3)))
@@ -88,14 +92,17 @@ class SCENARIO:
         junction_lidar_5 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=170, z=3)))
         junction_lidar_6 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=247, z=3)))
         self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
-        
+
+
+
+
+
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr(key=0)
         self.set_traffic_manger(synchronous)
-        self.spawn_ego()
 
         if self.nv_num != 0:
-            self.spawn_nv(self.nv_num)
-        #self.spawn_actor()
-        # self.follow_path()      
+            self.spawn_nv(self.nv_num) 
+
+        self.junction_lidar_spawn()
