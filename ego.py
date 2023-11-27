@@ -273,21 +273,15 @@ class EGO(SCENARIO):
     
     def save_data(self):
         imu_df = pd.DataFrame(self.imu_data)
-        self.imu_data.clear()
-        
         gnss_df = pd.DataFrame(self.gnss_data)
-        self.gnss_data.clear()
-
         radar_df = pd.DataFrame(self.radar_data)
         
-        with pd.ExcelWriter(os.path.join(self.dataset_path,'others/sensor_data.csv')) as writer:
-            imu_df.to_excel(writer,sheet_name='IMU')
-            gnss_df.to_excel(writer,sheet_name='GNSS')
-            radar_df.to_excel(writer, sheet_name='RADAR')
+        excel_path = os.path.join(self.dataset_path, 'others', 'sensor_data.xlsx')
         
-        del imu_df
-        del gnss_df
-        del radar_df
+        with pd.ExcelWriter(excel_path, mode='w') as writer:
+            imu_df.to_excel(writer, sheet_name='IMU')
+            gnss_df.to_excel(writer, sheet_name='GNSS')
+            radar_df.to_excel(writer, sheet_name='RADAR')
 
     def main(self):
         super().main()
@@ -303,13 +297,14 @@ class EGO(SCENARIO):
             self.update_view()
             self.img_callback()
             
-            if cv2.waitKey(1) & 0xff == ord('q'):
-                raise KeyboardInterrupt
-    
-    def __del__(self):
-        self.save_data()
-        cv2.destroyAllWindows()
+            if self.show:
+                if cv2.waitKey(1) & 0xff == ord('q'):
+                    break
         
+        self.save_data()
+
+    
+    def __del__(self):     
         super().__del__()
             
 if __name__ == '__main__':
@@ -318,4 +313,7 @@ if __name__ == '__main__':
         ego.main()
 
     except KeyboardInterrupt:
+        print('Canceld by user...')
+        
+    finally:
         del ego

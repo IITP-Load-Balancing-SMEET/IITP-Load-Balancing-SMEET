@@ -94,7 +94,13 @@ class SCENARIO:
         junction_lidar_4 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=257, y=247, z=3)))
         junction_lidar_5 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=170, z=3)))
         junction_lidar_6 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=247, z=3)))
-        self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
+        
+        self.junction_list.append(junction_lidar_1)
+        self.junction_list.append(junction_lidar_2)
+        self.junction_list.append(junction_lidar_3)
+        self.junction_list.append(junction_lidar_4)
+        self.junction_list.append(junction_lidar_5)
+        self.junction_list.append(junction_lidar_6)
 
     def junctio_lidar_listen(self):
         pass
@@ -111,7 +117,10 @@ class SCENARIO:
             
     def __del__(self):
         self.set_world(synchronous=False)
-        destroy_commands = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
-        self.client.apply_batch(destroy_commands)
+        destroy_commands1 = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
+        destroy_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.junction_list]
+        
+        self.client.apply_batch(destroy_commands1)
+        self.client.apply_batch(destroy_commands2)
         
         print("Canceled by user...")
