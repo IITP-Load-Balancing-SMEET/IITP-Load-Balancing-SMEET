@@ -100,7 +100,7 @@ class EGO(SCENARIO):
                                           attach_to=self.ego,
                                           attachment_type=carla.AttachmentType.Rigid)
         
-        dcam_ego.listen(lambda image: image.save_to_disk('tutorial/new_depth_output/%.6d.jpg' % image.frame,carla.ColorConverter.LogarithmicDepth))
+        dcam_ego.listen(self.depth_callback)
 
         self.actor_list.append(dcam_ego)
 
@@ -165,16 +165,16 @@ class EGO(SCENARIO):
         all_img = np.concatenate((img_left, img_front, img_right), axis=1)
         
         if self.save:
-            cv2.imwrite(f"{self.img_callback.counter:10d}.png", all_img)
-        
-        self.img_callback.counter += 1
-        return all_img
+            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", all_img)
 
     def depth_callback(self, camera):
         cc = camera.convert(carla.ColorConverter.LogarithmicDepth)
         img = np.copy(camera.raw_data)
         img = img.reshape(self.height, self.width, 4)
-        img = img[:, :, :3]
+        img = (img / np.max(img) * 255).astype(np.uint8)
+        
+        if self.save:
+            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
