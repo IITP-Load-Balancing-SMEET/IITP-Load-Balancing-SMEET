@@ -149,18 +149,28 @@ class EGO(SCENARIO):
         self.actor_list.append(radar_ego)
 
     def img_callback(self):
-        img_front = self.img_front.get()
-        img_left = self.img_left.get()
-        img_right = self.img_right.get()
+        img_front = None
+        img_left = None
+        img_right = None
+    
+        while not self.img_front.empty() and img_front is None:
+            img_front = self.img_front.get_nowait()
 
-        img_front = np.reshape(np.copy(img_front.raw_data), (self.height, self.width, 4))
-        img_left = np.reshape(np.copy(img_left.raw_data), (self.height, self.width, 4))
-        img_right = np.reshape(np.copy(img_right.raw_data), (self.height, self.width, 4))
+        while not self.img_left.empty() and img_left is None:
+            img_left = self.img_left.get_nowait()
 
-        all_img = np.concatenate((img_left, img_front, img_right), axis=1)
+        while not self.img_right.empty() and img_right is None:
+            img_right = self.img_right.get_nowait()
+
+        if img_front is not None and img_left is not None and img_right is not None:
+            img_front = np.reshape(np.copy(img_front.raw_data), (self.height, self.width, 4))
+            img_left = np.reshape(np.copy(img_left.raw_data), (self.height, self.width, 4))
+            img_right = np.reshape(np.copy(img_right.raw_data), (self.height, self.width, 4))
+
+            all_img = np.concatenate((img_left, img_front, img_right), axis=1)
         
-        if self.save:
-            cv2.imwrite(f"self.dataset_path/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", all_img)
+            if self.save:
+                cv2.imwrite(self.dataset_path + f"/images/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", all_img)
 
     def depth_callback(self, camera):
         img = np.copy(camera.raw_data)
@@ -168,7 +178,7 @@ class EGO(SCENARIO):
         img = (img / np.max(img) * 255).astype(np.uint8)
         
         if self.save:
-            cv2.imwrite(f"self.dataset_path/iamges/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", img)
+            cv2.imwrite(self.dataset_path + f"/images/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
