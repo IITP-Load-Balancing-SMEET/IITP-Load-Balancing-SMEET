@@ -41,6 +41,11 @@ class EGO(SCENARIO):
         self.radar_data = []
 
     def spawn_ego(self, spawn_point=carla.Location(x=0.0, y=0.0, z=0.0)):
+        spawn_point = {'platooning_merge':[],
+                       'platooning_split':[],
+                       'advanced_driving':[],
+                       'extended_sensors':[]}
+        
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
         
         self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points())) # map point 바꿔야함
@@ -299,13 +304,19 @@ class EGO(SCENARIO):
             
             if self.show:
                 if cv2.waitKey(1) & 0xff == ord('q'):
-                    break
-        
-        self.save_data()
+                    raise KeyboardInterrupt
 
     
-    def __del__(self):     
-        super().__del__()
+    def cleanup(self): # __del__ is not working
+        if self.save:
+            self.save_data()
+        
+        self.set_world(synchronous=False)
+        destroy_commands1 = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
+        destroy_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.junction_list]
+        
+        self.client.apply_batch(destroy_commands1)
+        self.client.apply_batch(destroy_commands2)
             
 if __name__ == '__main__':
     try:
@@ -316,4 +327,5 @@ if __name__ == '__main__':
         print('Canceld by user...')
         
     finally:
+        ego.cleanup()
         del ego

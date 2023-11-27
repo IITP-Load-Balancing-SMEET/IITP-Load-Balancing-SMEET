@@ -114,13 +114,3 @@ class SCENARIO:
             self.spawn_nv(self.nv_num) 
         if self.Jucntio_LiDAR_use is True:
             self.junction_lidar_spawn()
-            
-    def __del__(self):
-        self.set_world(synchronous=False)
-        destroy_commands1 = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
-        destroy_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.junction_list]
-        
-        self.client.apply_batch(destroy_commands1)
-        self.client.apply_batch(destroy_commands2)
-        
-        print("Canceled by user...")

@@ -1,9 +1,9 @@
 Dataset:
   path: "/home/smeet/IITP-Load-Balancing-SMEET/dataset/" # dataset path
-  save: True # whether save or not
-  show: False # whether show images or not
+  save: False # whether save or not
+  show: True # whether show images or not
 
 Scenario:
-  type: 'platooning' # choose scenario type out of platooning, advanced_driving and extended_sensors
+  type: 'platooning' # choose scenario type out of platooning_merge, platooning_split, advanced_driving and extended_sensors
   NV_num : 5 # Neighbor Vehicle
   Jucntio_LiDAR_use : False # Junction LiDAR
