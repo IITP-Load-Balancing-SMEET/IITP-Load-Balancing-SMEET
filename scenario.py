@@ -8,7 +8,7 @@ import os
 from utils.helpers import *
 
 class SCENARIO:
-    def __init__(self, yaml_path='./configs/sensor_configs.yaml'):
+    def __init__(self, yaml_path='./configs'):
         self.junction_list=[]
         self.actor_list = []
 
@@ -19,12 +19,12 @@ class SCENARIO:
         self.bp = self.world.get_blueprint_library()
         
 
-        self.sensor_config = parse_config_yaml(yaml_path)
 
-
-        # =============== Vehicle Parameters =============== #
-        self.nv_num = 10
+        # =============== Custom Parameters =============== #
         
+        custom_config = parse_config_yaml(os.join(yaml_path,'/customize.yaml'))
+        self.nv_num = int(custom_config['NV_num'])
+        self.Jucntio_LiDAR_use = bool(custom_config['Jucntio_LiDAR_use'])
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
     def lidar_callback(self, lidar):
@@ -93,11 +93,8 @@ class SCENARIO:
         junction_lidar_6 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=247, z=3)))
         self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
 
-    def junction_lidar_list(self):
+    def junctio_lidar_listen(self):
         
-
-
-
 
     def main(self, synchronous=True):
         self.set_world(synchronous)
@@ -106,4 +103,5 @@ class SCENARIO:
 
         if self.nv_num != 0:
             self.spawn_nv(self.nv_num) 
-        self.junction_lidar_spawn()
+        if self.Jucntio_LiDAR_use is True:
+            self.junction_lidar_spawn()
