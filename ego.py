@@ -1,14 +1,13 @@
-import carla
-import queue
-import cv2
-from scenario import *
-from utils.helpers import *
 import os
+import cv2
+import math
+import queue
+import carla
 import pandas as pd
 
-'''
-All sensors are following SAE coordinate system
-'''
+from scenario import *
+from utils.helpers import *
+
 class EGO(SCENARIO):
     def __init__(self):
         super().__init__()
@@ -161,7 +160,7 @@ class EGO(SCENARIO):
         all_img = np.concatenate((img_left, img_front, img_right), axis=1)
         
         if self.save:
-            cv2.imwrite(f"self.dataset_path/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):10d}.png", all_img)
+            cv2.imwrite(f"self.dataset_path/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", all_img)
 
     def depth_callback(self, camera):
         img = np.copy(camera.raw_data)
@@ -169,26 +168,24 @@ class EGO(SCENARIO):
         img = (img / np.max(img) * 255).astype(np.uint8)
         
         if self.save:
-            cv2.imwrite(f"self.dataset_path/iamges/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):10d}.png", img)
+            cv2.imwrite(f"self.dataset_path/iamges/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
         gyro = imu.gyroscope
         
-        if self.save:
-            self.imu_data.append({
-                'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
-                'acc.x' : acc.x,
-                'acc.y' : acc.y,
-                'acc.z' : acc.z,
-                'gyro.x' : gyro.x,
-                'gyro.y' : gyro.y,
-                'gyro.z' : gyro.z,
-                
-            })
         print(f"Acceleration [m/s^2] x: {acc.x:.6f} y: {acc.y:.6f}, z: {acc.z:.6f}\n")
         print(f"Angular rate [rad/s] x: {gyro.x:.6f} rad/sec, y: {gyro.y:.6f} rad/sec, z: {gyro.z:.6f} \n")
-
+        
+        if self.save:
+            self.imu_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
+                                  'ax' : acc.x,
+                                  'ay' : acc.y,
+                                  'az' : acc.z,
+                                  'wx' : gyro.x,
+                                  'wy' : gyro.y,
+                                  'wz' : gyro.z})
+            
     def gnss_callback(self, gnss):
         lat = gnss.latitude
         lon = gnss.longitude
@@ -218,38 +215,41 @@ class EGO(SCENARIO):
         y = radius * ((-lat + self.INIT_LAT) * self.drad)
         z = alt - self.INIT_ALT
 
-        if self.save:
-            self.gnss_data.append({
-                'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
-                'x' : x,
-                'y' : y,
-                'z' : z,
-            })
-            
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
+        
+        if self.save:
+            self.gnss_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
+                                   'x' : x,
+                                   'y' : y,
+                                   'z' : z})
     
-    def radar_callback(self, Radar, save=False):
-        current_rot = Radar.transform.rotation
-        for detect in Radar:
+    def radar_callback(self, radar):
+        current_rot = radar.transform.rotation
+        
+        for detect in radar:
             azi = math.degrees(detect.azimuth)
             alt = math.degrees(detect.altitude)
             
             # The 0.25 adjusts a bit the distance so the dots can
             # be properly seen
             fw_vec = carla.Vector3D(x=detect.depth - 0.25)
-            carla.Transform(
-                carla.Location(),
-                carla.Rotation(
-                    pitch=current_rot.pitch + alt,
-                    yaw=current_rot.yaw + azi,
-                    roll=current_rot.roll)).transform(fw_vec)
+            carla.Transform(carla.Location(),
+                            carla.Rotation(pitch=current_rot.pitch + alt,
+                                           yaw=current_rot.yaw + azi,
+                                           roll=current_rot.roll)).transform(fw_vec)
             
             self.world.debug.draw_point(
-                Radar.transform.location + fw_vec,
+                radar.transform.location + fw_vec,
                 size=0.075,
                 life_time=0.06,
                 persistent_lines=False,
                 color=carla.Color(255, 0, 0))
+            
+            if self.save:
+                self.radar_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
+                                        'x' : fw_vec.x,
+                                        'y' : fw_vec.y,
+                                        'z' : fw_vec.z})
 
     def update_view(self):
         try:
@@ -262,12 +262,16 @@ class EGO(SCENARIO):
     def save_data(self):
         imu_df = pd.DataFrame(self.imu_data)
         self.imu_data.clear()
+        
         gnss_df = pd.DataFrame(self.gnss_data)
         self.gnss_data.clear()
 
+        radar_df = pd.DataFrame(self.radar_data)
+        
         with pd.ExcelWriter(os.path.join(self.log_path,'/sensor_data.xlsx')) as writer:
             imu_df.to_excel(writer,sheet_name='IMU')
-            gnss_df.to_excel(writer,sheet_name='gnss')
+            gnss_df.to_excel(writer,sheet_name='GNSS')
+            radar_df.to_excel(writer, sheet_name='RADAR')
         
         del imu_df
         del gnss_df
@@ -289,6 +293,7 @@ class EGO(SCENARIO):
             self.img_callback()
     
     def __del__(self):
+        self.save_data()
         super().__del__()
             
 if __name__ == '__main__':
