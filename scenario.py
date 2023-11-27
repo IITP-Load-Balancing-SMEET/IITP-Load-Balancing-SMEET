@@ -1,7 +1,8 @@
+import os
+import random
 import carla
 import numpy as np
 import open3d as o3d
-import os
 from utils.helpers import *
 
 class SCENARIO:
@@ -72,8 +73,20 @@ class SCENARIO:
 
     def set_traffic_manger(self, synchronous=True):
         self.traffic_manager = self.client.get_trafficmanager()
-        self.traffic_manager.set_synchronous_mode(synchronous)
+        self.traffic_manager.set_synchronous_mode(True)
+        
+        spawn_points = self.world.get_map().get_spawn_points()
 
+        max_vehicles = min([30, len(spawn_points)])
+        
+        for _, spawn_point in enumerate(random.sample(spawn_points, max_vehicles)):
+            vehicle_bp = random.choice(self.bp.filter('vehicle.*.*'))
+            temp_vehicle = self.world.try_spawn_actor(vehicle_bp, spawn_point)
+            
+            if temp_vehicle is not None:
+                temp_vehicle.set_autopilot(True)
+                self.actor_list.append(temp_vehicle)
+        
     def junction_lidar_spawn(self):
         '''
             jucction 1 = x: 312 y: 170
@@ -102,6 +115,9 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_5)
         self.junction_list.append(junction_lidar_6)
 
+    def platooning(self):
+        pass
+    
     def junctio_lidar_listen(self):
         pass
 
@@ -111,6 +127,7 @@ class SCENARIO:
         self.set_traffic_manger(synchronous)
 
         if self.nv_num != 0:
-            self.spawn_nv(self.nv_num) 
+            # self.spawn_nv(self.nv_num) 
+            pass
         if self.Jucntio_LiDAR_use is True:
             self.junction_lidar_spawn()
