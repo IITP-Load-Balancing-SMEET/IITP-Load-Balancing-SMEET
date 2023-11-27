@@ -1,4 +1,3 @@
-import cv2
 import math
 import random
 import carla
@@ -18,14 +17,18 @@ class SCENARIO:
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
         
-        self.sensor_config = parse_config_yaml(yaml_path)
+        # =============== Sensor Parameters =============== #
+        self.sensor_config = parse_config_yaml(os.path.join(yaml_path,'sensor_configs.yaml'))
 
-        # =============== Vehicle Parameters =============== #
-        self.nv_num = 10
+        # =============== Scenario Parameters =============== #
+        self.custom_config = parse_config_yaml(os.path.join(yaml_path,'customize.yaml'))
         
-        custom_config = parse_config_yaml(os.join(yaml_path,'/customize.yaml'))
-        self.nv_num = int(custom_config['NV_num'])
-        self.Jucntio_LiDAR_use = bool(custom_config['Jucntio_LiDAR_use'])
+        self.dataset_path = self.custom_config['Dataset']['path']
+        self.save = self.custom_config['Dataset']['save']
+        
+        self.nv_num = self.custom_config['Scenario']['NV_num']
+        self.Jucntio_LiDAR_use = self.custom_config['Scenario']['Jucntio_LiDAR_use']
+        
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
     def lidar_callback(self, lidar):
@@ -106,3 +109,10 @@ class SCENARIO:
             self.spawn_nv(self.nv_num) 
         if self.Jucntio_LiDAR_use is True:
             self.junction_lidar_spawn()
+            
+    def __del__(self):
+        self.set_world(synchronous=False)
+        destroy_commands = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
+        self.client.apply_batch(destroy_commands)
+        
+        print("Canceled by user...")

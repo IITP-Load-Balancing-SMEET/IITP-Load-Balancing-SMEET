@@ -1,5 +1,6 @@
 import carla
 import queue
+import cv2
 from scenario import *
 from utils.helpers import *
 import os
@@ -9,19 +10,16 @@ import pandas as pd
 All sensors are following SAE coordinate system
 '''
 class EGO(SCENARIO):
-    def __init__(self, log='./log', save=False):
+    def __init__(self):
         super().__init__()
-        
-        # variable whether save or not
-        self.save = save
         
         # For all sensor synchronization
         self.tick = self.sensor_config['all_sensor_tick'] 
         
         # Camera Parameters
-        self.width = self.sensor_config['CAMERA']['width']
-        self.height = self.sensor_config['CAMERA']['height']
-        self.fov = self.sensor_config['CAMERA']['fov']
+        self.width = self.sensor_config['Camera']['width']
+        self.height = self.sensor_config['Camera']['height']
+        self.fov = self.sensor_config['Camera']['fov']
        
         # GNSS Parameters 
         self.earth_radius_major = self.sensor_config['GNSS']['earth_radius_major']
@@ -29,16 +27,15 @@ class EGO(SCENARIO):
         self.is_first = True
 
         # Radar Parameters
-        self.r_vfov = self.sensor_config['RADAR']['vfov']
-        self.r_hfov = self.sensor_config['RADAR']['hfov']
-        self.r_range = self.sensor_config['RADAR']['range']
+        self.r_vfov = self.sensor_config['Radar']['vfov']
+        self.r_hfov = self.sensor_config['Radar']['hfov']
+        self.r_range = self.sensor_config['Radar']['range']
 
         self.img_front = queue.Queue(maxsize=1)
         self.img_left = queue.Queue(maxsize=1)
         self.img_right = queue.Queue(maxsize=1)
 
         # Log system
-        self.log_path = log
         self.imu_data = []
         self.gnss_data = []
         self.radar_data = []
@@ -136,7 +133,6 @@ class EGO(SCENARIO):
 
     def spawn_radar(self):
         radar_bp = self.world.get_blueprint_library().find('sensor.other.radar')
-        
         radar_bp.set_attribute('sensor_tick', str(self.tick))
         radar_bp.set_attribute('horizontal_fov', str(self.r_hfov))
         radar_bp.set_attribute('vertical_fov', str(self.r_vfov))
@@ -165,16 +161,15 @@ class EGO(SCENARIO):
         all_img = np.concatenate((img_left, img_front, img_right), axis=1)
         
         if self.save:
-            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", all_img)
+            cv2.imwrite(f"self.dataset_path/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):10d}.png", all_img)
 
     def depth_callback(self, camera):
-        cc = camera.convert(carla.ColorConverter.LogarithmicDepth)
         img = np.copy(camera.raw_data)
         img = img.reshape(self.height, self.width, 4)
         img = (img / np.max(img) * 255).astype(np.uint8)
         
         if self.save:
-            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", img)
+            cv2.imwrite(f"self.dataset_path/iamges/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):10d}.png", img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
@@ -182,7 +177,7 @@ class EGO(SCENARIO):
         
         if self.save:
             self.imu_data.append({
-                'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
+                'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
                 'acc.x' : acc.x,
                 'acc.y' : acc.y,
                 'acc.z' : acc.z,
@@ -225,7 +220,7 @@ class EGO(SCENARIO):
 
         if self.save:
             self.gnss_data.append({
-                'timestamp': self.world.get_snapshot().timestamp.elaped_seconds,
+                'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
                 'x' : x,
                 'y' : y,
                 'z' : z,
@@ -233,11 +228,12 @@ class EGO(SCENARIO):
             
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
     
-    def radar_callback(self, radar, save=False):
-        current_rot = radar.transform.rotation
-        for detect in radar:
+    def radar_callback(self, Radar, save=False):
+        current_rot = Radar.transform.rotation
+        for detect in Radar:
             azi = math.degrees(detect.azimuth)
             alt = math.degrees(detect.altitude)
+            
             # The 0.25 adjusts a bit the distance so the dots can
             # be properly seen
             fw_vec = carla.Vector3D(x=detect.depth - 0.25)
@@ -249,7 +245,7 @@ class EGO(SCENARIO):
                     roll=current_rot.roll)).transform(fw_vec)
             
             self.world.debug.draw_point(
-                radar.transform.location + fw_vec,
+                Radar.transform.location + fw_vec,
                 size=0.075,
                 life_time=0.06,
                 persistent_lines=False,
@@ -297,7 +293,7 @@ class EGO(SCENARIO):
             
 if __name__ == '__main__':
     try:
-        ego = EGO(save=True)
+        ego = EGO()
         ego.main()
 
     except KeyboardInterrupt:
