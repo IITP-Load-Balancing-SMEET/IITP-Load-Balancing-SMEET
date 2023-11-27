@@ -1,0 +1,8 @@
+# Neighbor Vehicle
+
+NV_num : 5
+
+
+# Junction LiDAR
+
+Jucntio_LiDAR_use : False
