@@ -1,5 +1,5 @@
 Dataset:
-  path: "/home/smeet/IITP-Load-Balancing-SMEET/dataset/" # dataset path
+  path: "./dataset/" # dataset path
   save: False # whether save or not
   show: True # whether show images or not
 

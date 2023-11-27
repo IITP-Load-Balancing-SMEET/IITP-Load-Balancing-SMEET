@@ -283,7 +283,7 @@ class EGO(SCENARIO):
         
         excel_path = os.path.join(self.dataset_path, 'others', 'sensor_data.xlsx')
         
-        with pd.ExcelWriter(excel_path, mode='w') as writer:
+        with pd.ExcelWriter(excel_path, engine='xlsxwriter') as writer:
             imu_df.to_excel(writer, sheet_name='IMU')
             gnss_df.to_excel(writer, sheet_name='GNSS')
             radar_df.to_excel(writer, sheet_name='RADAR')
