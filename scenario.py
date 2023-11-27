@@ -93,6 +93,8 @@ class SCENARIO:
         junction_lidar_6 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=202, y=247, z=3)))
         self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
 
+    def junction_lidar_list(self):
+        
 
 
 
@@ -104,5 +106,4 @@ class SCENARIO:
 
         if self.nv_num != 0:
             self.spawn_nv(self.nv_num) 
-
         self.junction_lidar_spawn()

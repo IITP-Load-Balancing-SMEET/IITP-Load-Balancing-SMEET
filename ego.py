@@ -2,12 +2,12 @@ import carla
 import queue
 from scenario import *
 from utils.helpers import *
-
+import os
 '''
 All sensors are following SAE coordinate system
 '''
 class EGO(SCENARIO):
-    def __init__(self, yaml_path='./configs/sensor_configs.yaml'):
+    def __init__(self, yaml_path='./configs/sensor_configs.yaml', log='./log'):
         super().__init__()
         sensor_config = parse_config_yaml(yaml_path)
         
@@ -18,7 +18,7 @@ class EGO(SCENARIO):
         self.width = sensor_config['CAMERA']['width']
         self.height = sensor_config['CAMERA']['height']
         self.fov = sensor_config['CAMERA']['fov']
-        
+       
         # GNSS Parameters 
         self.earth_radius_major = sensor_config['GNSS']['earth_radius_major']
         self.drad = sensor_config['GNSS']['drad']
@@ -32,6 +32,7 @@ class EGO(SCENARIO):
         self.img_front = queue.Queue(maxsize=1)
         self.img_left = queue.Queue(maxsize=1)
         self.img_right = queue.Queue(maxsize=1)
+
 
     def spawn_ego(self, spawn_point=carla.Location(x=0.0, y=0.0, z=0.0)):
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
