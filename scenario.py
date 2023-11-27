@@ -23,6 +23,7 @@ class SCENARIO:
         
         self.dataset_path = self.custom_config['Dataset']['path']
         self.save = self.custom_config['Dataset']['save']
+        self.show = self.custom_config['Dataset']['show']
         
         self.nv_num = self.custom_config['Scenario']['NV_num']
         self.Jucntio_LiDAR_use = self.custom_config['Scenario']['Jucntio_LiDAR_use']

@@ -33,6 +33,7 @@ class EGO(SCENARIO):
         self.img_front = queue.Queue(maxsize=1)
         self.img_left = queue.Queue(maxsize=1)
         self.img_right = queue.Queue(maxsize=1)
+        self.depth_img = queue.Queue(maxsize=1)
 
         # Log system
         self.imu_data = []
@@ -47,12 +48,19 @@ class EGO(SCENARIO):
 
         self.actor_list.append(self.ego)
 
-    def spawn_rgb_camera(self):
+    def spawn_camera(self):
         cam_bp = self.world.get_blueprint_library().find('sensor.camera.rgb')
+        dcam_bp = self.world.get_blueprint_library().find('sensor.camera.depth')
+        
         cam_bp.set_attribute("image_size_x", str(self.width))
         cam_bp.set_attribute("image_size_y", str(self.height))
         cam_bp.set_attribute("fov", str(self.fov))
         cam_bp.set_attribute("sensor_tick", str(self.tick))
+        
+        dcam_bp.set_attribute("image_size_x", str(self.width * 3))
+        dcam_bp.set_attribute("image_size_y", str(self.height))
+        dcam_bp.set_attribute("fov", str(self.fov))
+        dcam_bp.set_attribute("sensor_tick", str(self.tick))
 
         cam1_transform = carla.Transform(carla.Location(x=1.5, z=2.0))
         cam2_transform = carla.Transform(carla.Location(x=1.5, y=-2.0, z=2.0), carla.Rotation(yaw=-30.0))
@@ -73,31 +81,20 @@ class EGO(SCENARIO):
                                          cam3_transform, 
                                          attach_to=self.ego,
                                          attachment_type=carla.AttachmentType.Rigid) 
+        # front depth
+        dcam_ego = self.world.spawn_actor(dcam_bp, 
+                                          cam1_transform, 
+                                          attach_to=self.ego,
+                                          attachment_type=carla.AttachmentType.Rigid)
         
         cam1_ego.listen(self.img_front.put)
         cam2_ego.listen(self.img_left.put)
         cam3_ego.listen(self.img_right.put)
+        dcam_ego.listen(self.depth_img.put)
 
         self.actor_list.append(cam1_ego)
         self.actor_list.append(cam2_ego)
         self.actor_list.append(cam3_ego)
-
-    def spawn_depth_camera(self):
-        dcam_bp = self.world.get_blueprint_library().find('sensor.camera.depth')
-        
-        dcam_bp.set_attribute("image_size_x", str(self.width))
-        dcam_bp.set_attribute("image_size_y", str(self.height))
-        dcam_bp.set_attribute("fov", str(self.fov))
-        dcam_bp.set_attribute("sensor_tick", str(self.tick))
-
-        dcam_transform = carla.Transform(carla.Location(x=1.5, z=2.0))
-        dcam_ego = self.world.spawn_actor(dcam_bp, 
-                                          dcam_transform, 
-                                          attach_to=self.ego,
-                                          attachment_type=carla.AttachmentType.Rigid)
-        
-        dcam_ego.listen(self.depth_callback)
-
         self.actor_list.append(dcam_ego)
 
     def spawn_imu(self):
@@ -152,6 +149,8 @@ class EGO(SCENARIO):
         img_front = None
         img_left = None
         img_right = None
+        
+        depth_img = None
     
         while not self.img_front.empty() and img_front is None:
             img_front = self.img_front.get_nowait()
@@ -161,24 +160,27 @@ class EGO(SCENARIO):
 
         while not self.img_right.empty() and img_right is None:
             img_right = self.img_right.get_nowait()
+            
+        while not self.depth_img.empty() and depth_img is None:
+            depth_img = self.depth_img.get_nowait()
 
-        if img_front is not None and img_left is not None and img_right is not None:
+        if (img_front is not None) and (img_left is not None) and (img_right is not None) and (depth_img is not None):
             img_front = np.reshape(np.copy(img_front.raw_data), (self.height, self.width, 4))
             img_left = np.reshape(np.copy(img_left.raw_data), (self.height, self.width, 4))
             img_right = np.reshape(np.copy(img_right.raw_data), (self.height, self.width, 4))
-
-            all_img = np.concatenate((img_left, img_front, img_right), axis=1)
-        
+            
+            depth_img = np.reshape(np.copy(depth_img.raw_data), (self.height, self.width*3, 4))
+            depth_img = (depth_img / np.max(depth_img) * 255).astype(np.uint8)
+            
+            rgb_img = np.concatenate((img_left, img_front, img_right), axis=1)
+            all_img = np.concatenate((rgb_img, depth_img), axis=0)
+            
+            if self.show:
+                cv2.imshow('images', all_img)
+                
             if self.save:
-                cv2.imwrite(self.dataset_path + f"/images/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", all_img)
-
-    def depth_callback(self, camera):
-        img = np.copy(camera.raw_data)
-        img = img.reshape(self.height, self.width, 4)
-        img = (img / np.max(img) * 255).astype(np.uint8)
-        
-        if self.save:
-            cv2.imwrite(self.dataset_path + f"/images/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", img)
+                cv2.imwrite(self.dataset_path + f"/images/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", depth_img)
+                cv2.imwrite(self.dataset_path + f"/images/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", rgb_img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
@@ -278,21 +280,20 @@ class EGO(SCENARIO):
 
         radar_df = pd.DataFrame(self.radar_data)
         
-        with pd.ExcelWriter(os.path.join(self.log_path,'/sensor_data.xlsx')) as writer:
+        with pd.ExcelWriter(os.path.join(self.dataset_path,'others/sensor_data.csv')) as writer:
             imu_df.to_excel(writer,sheet_name='IMU')
             gnss_df.to_excel(writer,sheet_name='GNSS')
             radar_df.to_excel(writer, sheet_name='RADAR')
         
         del imu_df
         del gnss_df
-
+        del radar_df
 
     def main(self):
         super().main()
         
         self.spawn_ego()
-        self.spawn_rgb_camera()
-        self.spawn_depth_camera()
+        self.spawn_camera()
         self.spawn_imu()
         self.spawn_gnss()
         self.spawn_radar()
@@ -301,9 +302,14 @@ class EGO(SCENARIO):
             self.world.tick()
             self.update_view()
             self.img_callback()
+            
+            if cv2.waitKey(1) & 0xff == ord('q'):
+                raise KeyboardInterrupt
     
     def __del__(self):
         self.save_data()
+        cv2.destroyAllWindows()
+        
         super().__del__()
             
 if __name__ == '__main__':
