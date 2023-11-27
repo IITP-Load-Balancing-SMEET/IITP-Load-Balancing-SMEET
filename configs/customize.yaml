@@ -7,3 +7,5 @@ Scenario:
   type: 'merge1'
   NV_num : 5 # Neighbor Vehicle
   Jucntio_LiDAR_use : False # Junction LiDAR
+
+  

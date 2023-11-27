@@ -207,7 +207,7 @@ class EGO(SCENARIO):
         print(f"Angular rate [rad/s] x: {gyro.x:.6f} rad/sec, y: {gyro.y:.6f} rad/sec, z: {gyro.z:.6f} \n")
         
         if self.save:
-            self.imu_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
+            self.imu_data.append({'timestamp': imu.timestamp,
                                   'ax' : acc.x,
                                   'ay' : acc.y,
                                   'az' : acc.z,
@@ -247,7 +247,7 @@ class EGO(SCENARIO):
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
         
         if self.save:
-            self.gnss_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
+            self.gnss_data.append({'timestamp': gnss.timestamp,
                                    'x' : x,
                                    'y' : y,
                                    'z' : z})
