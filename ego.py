@@ -3,6 +3,7 @@ import queue
 from scenario import *
 from utils.helpers import *
 import os
+import pandas as pd
 '''
 All sensors are following SAE coordinate system
 '''
@@ -33,6 +34,11 @@ class EGO(SCENARIO):
         self.img_left = queue.Queue(maxsize=1)
         self.img_right = queue.Queue(maxsize=1)
 
+        # Log system
+        self.log_path = log
+        self.imu_data = []
+        self.gnss_data = []
+        self.radar_data = []
 
     def spawn_ego(self, spawn_point=carla.Location(x=0.0, y=0.0, z=0.0)):
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
@@ -166,7 +172,16 @@ class EGO(SCENARIO):
     def imu_callback(self, imu):
         acc = imu.accelerometer
         gyro = imu.gyroscope
-        
+        self.imu_data.append({
+            'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
+            'acc.x' : acc.x,
+            'acc.y' : acc.y,
+            'acc.z' : acc.z,
+            'gyro.x' : gyro.x,
+            'gyro.y' : gyro.y,
+            'gyro.z' : gyro.z,
+            
+        })
         print(f"Acceleration [m/s^2] x: {acc.x:.6f} y: {acc.y:.6f}, z: {acc.z:.6f}\n")
         print(f"Angular rate [rad/s] x: {gyro.x:.6f} rad/sec, y: {gyro.y:.6f} rad/sec, z: {gyro.z:.6f} \n")
 
@@ -199,6 +214,12 @@ class EGO(SCENARIO):
         y = radius * ((-lat + self.INIT_LAT) * self.drad)
         z = alt - self.INIT_ALT
 
+        self.gnss_data.append({
+            'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
+            'x' : x,
+            'y' : y,
+            'z' : z,
+        })
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
     
     def radar_callback(self, radar):
@@ -230,7 +251,21 @@ class EGO(SCENARIO):
 
         except RuntimeError:
             raise KeyboardInterrupt
+    
+    def save_data(self):
+        imu_df = pd.DataFrame(self.imu_data)
+        self.imu_data.clear()
+        gnss_df = pd.DataFrame(self.gnss_data)
+        self.gnss_data.clear()
+
+        with pd.ExcelWriter(os.path.join(self.log_path,'/sensor_data.xlsx')) as writer:
+            imu_df.to_excel(writer,sheet_name='IMU')
+            gnss_df.to_excel(writer,sheet_name='gnss')
         
+        del imu_df
+        del gnss_df
+
+
     def main(self):
         super().main()
         
