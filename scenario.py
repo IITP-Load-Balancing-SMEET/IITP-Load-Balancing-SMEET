@@ -18,9 +18,7 @@ class SCENARIO:
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
         
-
         self.sensor_config = parse_config_yaml(yaml_path)
-
 
         # =============== Vehicle Parameters =============== #
         self.nv_num = 10

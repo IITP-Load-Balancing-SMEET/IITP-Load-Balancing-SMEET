@@ -4,34 +4,34 @@ from scenario import *
 from utils.helpers import *
 import os
 import pandas as pd
+
 '''
 All sensors are following SAE coordinate system
 '''
 class EGO(SCENARIO):
-    def __init__(self, yaml_path='./configs/sensor_configs.yaml', log='./log', save=False):
+    def __init__(self, log='./log', save=False):
         super().__init__()
-        sensor_config = parse_config_yaml(yaml_path)
         
         # variable whether save or not
         self.save = save
         
         # For all sensor synchronization
-        self.tick = sensor_config['all_sensor_tick'] 
+        self.tick = self.sensor_config['all_sensor_tick'] 
         
         # Camera Parameters
-        self.width = sensor_config['CAMERA']['width']
-        self.height = sensor_config['CAMERA']['height']
-        self.fov = sensor_config['CAMERA']['fov']
+        self.width = self.sensor_config['CAMERA']['width']
+        self.height = self.sensor_config['CAMERA']['height']
+        self.fov = self.sensor_config['CAMERA']['fov']
        
         # GNSS Parameters 
-        self.earth_radius_major = sensor_config['GNSS']['earth_radius_major']
-        self.drad = sensor_config['GNSS']['drad']
+        self.earth_radius_major = self.sensor_config['GNSS']['earth_radius_major']
+        self.drad = self.sensor_config['GNSS']['drad']
         self.is_first = True
 
         # Radar Parameters
-        self.r_vfov = sensor_config['RADAR']['vfov']
-        self.r_hfov = sensor_config['RADAR']['hfov']
-        self.r_range = sensor_config['RADAR']['range']
+        self.r_vfov = self.sensor_config['RADAR']['vfov']
+        self.r_hfov = self.sensor_config['RADAR']['hfov']
+        self.r_range = self.sensor_config['RADAR']['range']
 
         self.img_front = queue.Queue(maxsize=1)
         self.img_left = queue.Queue(maxsize=1)
@@ -282,7 +282,7 @@ class EGO(SCENARIO):
         
         self.spawn_ego()
         self.spawn_rgb_camera()
-        # self.spawn_depth_camera()
+        self.spawn_depth_camera()
         self.spawn_imu()
         self.spawn_gnss()
         self.spawn_radar()
@@ -297,7 +297,7 @@ class EGO(SCENARIO):
             
 if __name__ == '__main__':
     try:
-        ego = EGO(yaml_path="./configs/sensor_configs.yaml", save=True)
+        ego = EGO(save=True)
         ego.main()
 
     except KeyboardInterrupt:
