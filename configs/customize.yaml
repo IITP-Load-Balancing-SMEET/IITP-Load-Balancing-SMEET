@@ -4,6 +4,6 @@ Dataset:
   show: True # whether show images or not
 
 Scenario:
-  type: 'platooning' # choose scenario type out of platooning_merge, platooning_split, advanced_driving and extended_sensors
+  type: 'merge1'
   NV_num : 5 # Neighbor Vehicle
   Jucntio_LiDAR_use : False # Junction LiDAR

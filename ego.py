@@ -40,15 +40,27 @@ class EGO(SCENARIO):
         self.gnss_data = []
         self.radar_data = []
 
-    def spawn_ego(self, spawn_point=carla.Location(x=0.0, y=0.0, z=0.0)):
-        spawn_point = {'platooning_merge':[],
-                       'platooning_split':[],
-                       'advanced_driving':[],
-                       'extended_sensors':[]}
-        
+    def spawn_ego(self, spawn_point='random'):
+        # choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
+        #           'merge2': self.map.get_waypoint_xodr(road_id=1194, lane_id=2, s=53.86).transform,
+        #           'merge3': self.map.get_waypoint_xodr(road_id=1080, lane_id=2, s=75.18).transform,
+        #           'merge4': self.map.get_waypoint_xodr(road_id=779, lane_id=2, s=50.61).transform,
+        #           'split1': self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=103.35).transform,
+        #           'split2': self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=26.95).transform,
+        #           'split3': self.map.get_waypoint_xodr(road_id=47, lane_id=-4, s=86.03).transform,
+        #           'split4': self.map.get_waypoint_xodr(road_id=1076, lane_id=2, s=66.25).transform,
+        #           'junction1':self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+        #           'junction2': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+        #           'junction3': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+        #           'junction4': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+        #           'junction5': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+        #           'random': np.random.choice(self.map.get_spawn_points())}
+    
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
         
-        self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points())) # map point 바꿔야함
+        #self.ego = self.world.spawn_actor(ego_bp, choice[spawn_point])
+        self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points()))
+        
         self.ego.set_autopilot(True)
 
         self.actor_list.append(self.ego)
@@ -296,7 +308,9 @@ class EGO(SCENARIO):
         self.spawn_imu()
         self.spawn_gnss()
         self.spawn_radar()
-
+        
+        self.set_traffic_manger()
+        
         while True:
             self.world.tick()
             self.update_view()
