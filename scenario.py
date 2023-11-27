@@ -94,11 +94,8 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_1,junction_lidar_2,junction_lidar_3,junction_lidar_4,junction_lidar_5,junction_lidar_6)
 
     def junction_lidar_list(self):
-        
-
-
-
-
+        pass
+    
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr(key=0)
@@ -107,3 +104,10 @@ class SCENARIO:
         if self.nv_num != 0:
             self.spawn_nv(self.nv_num) 
         self.junction_lidar_spawn()
+        
+    def __del__(self):
+        self.set_world(synchronous=False)
+        destroy_commands = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
+        self.client.apply_batch(destroy_commands)
+
+        print("Canceled by user...")
