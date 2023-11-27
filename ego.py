@@ -8,9 +8,12 @@ import pandas as pd
 All sensors are following SAE coordinate system
 '''
 class EGO(SCENARIO):
-    def __init__(self, yaml_path='./configs/sensor_configs.yaml', log='./log'):
+    def __init__(self, yaml_path='./configs/sensor_configs.yaml', log='./log', save=False):
         super().__init__()
         sensor_config = parse_config_yaml(yaml_path)
+        
+        # variable whether save or not
+        self.save = save
         
         # For all sensor synchronization
         self.tick = sensor_config['all_sensor_tick'] 
@@ -91,7 +94,7 @@ class EGO(SCENARIO):
         dcam_bp.set_attribute("fov", str(self.fov))
         dcam_bp.set_attribute("sensor_tick", str(self.tick))
 
-        dcam_transform = carla.Transform(carla.Location(z=2))
+        dcam_transform = carla.Transform(carla.Location(x=1.5, z=2.0))
         dcam_ego = self.world.spawn_actor(dcam_bp, 
                                           dcam_transform, 
                                           attach_to=self.ego,
@@ -160,28 +163,34 @@ class EGO(SCENARIO):
         img_right = np.reshape(np.copy(img_right.raw_data), (self.height, self.width, 4))
 
         all_img = np.concatenate((img_left, img_front, img_right), axis=1)
-
-        return all_img
+        
+        if self.save:
+            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", all_img)
 
     def depth_callback(self, camera):
-        camera.convert(carla.ColorConverter.LogarithmicDepth)
+        cc = camera.convert(carla.ColorConverter.LogarithmicDepth)
         img = np.copy(camera.raw_data)
         img = img.reshape(self.height, self.width, 4)
-        img = img[:, :, :3]
+        img = (img / np.max(img) * 255).astype(np.uint8)
+        
+        if self.save:
+            cv2.imwrite(f"{int(self.world.get_snapshto().timestamp.elaped_seconds):10d}.png", img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
         gyro = imu.gyroscope
-        self.imu_data.append({
-            'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
-            'acc.x' : acc.x,
-            'acc.y' : acc.y,
-            'acc.z' : acc.z,
-            'gyro.x' : gyro.x,
-            'gyro.y' : gyro.y,
-            'gyro.z' : gyro.z,
-            
-        })
+        
+        if self.save:
+            self.imu_data.append({
+                'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
+                'acc.x' : acc.x,
+                'acc.y' : acc.y,
+                'acc.z' : acc.z,
+                'gyro.x' : gyro.x,
+                'gyro.y' : gyro.y,
+                'gyro.z' : gyro.z,
+                
+            })
         print(f"Acceleration [m/s^2] x: {acc.x:.6f} y: {acc.y:.6f}, z: {acc.z:.6f}\n")
         print(f"Angular rate [rad/s] x: {gyro.x:.6f} rad/sec, y: {gyro.y:.6f} rad/sec, z: {gyro.z:.6f} \n")
 
@@ -214,15 +223,17 @@ class EGO(SCENARIO):
         y = radius * ((-lat + self.INIT_LAT) * self.drad)
         z = alt - self.INIT_ALT
 
-        self.gnss_data.append({
-            'timestamp': self.world.get_snapshto().timestamp.elaped_seconds,
-            'x' : x,
-            'y' : y,
-            'z' : z,
-        })
+        if self.save:
+            self.gnss_data.append({
+                'timestamp': self.world.get_snapshot().timestamp.elaped_seconds,
+                'x' : x,
+                'y' : y,
+                'z' : z,
+            })
+            
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
     
-    def radar_callback(self, radar):
+    def radar_callback(self, radar, save=False):
         current_rot = radar.transform.rotation
         for detect in radar:
             azi = math.degrees(detect.azimuth)
@@ -276,33 +287,17 @@ class EGO(SCENARIO):
         self.spawn_gnss()
         self.spawn_radar()
 
-        # OpenCV named window for display
-        cv2.namedWindow('All cameras', cv2.WINDOW_AUTOSIZE)
-
         while True:
             self.world.tick()
             self.update_view()
-            all_img = self.img_callback()
-
-            cv2.imshow('All cameras', all_img)
+            self.img_callback()
     
-            # Break loop if user presses q
-            if cv2.waitKey(0) == ord('q'):
-                raise(KeyboardInterrupt)
-            
-
     def __del__(self):
-        self.set_world(synchronous=False)
-        destroy_commands = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
-        self.client.apply_batch(destroy_commands)
-
-        super().__del__()  # 부모 클래스 소멸자 명시적 호출
-        cv2.destroyAllWindows()
-        print("Canceled by user...")
-
+        super().__del__()
+            
 if __name__ == '__main__':
     try:
-        ego = EGO(yaml_path="./configs/sensor_configs.yaml")
+        ego = EGO(yaml_path="./configs/sensor_configs.yaml", save=True)
         ego.main()
 
     except KeyboardInterrupt:
