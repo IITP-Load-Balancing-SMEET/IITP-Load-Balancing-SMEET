@@ -32,14 +32,9 @@ class SCENARIO:
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
     def lidar_callback(self, lidar):
-        point_list = o3d.geometry.PointCloud()
-        pcd = np.copy(np.frombuffer(lidar.raw_data, dtype=np.dtype('f4')))
-        pcd = np.reshape(pcd, (pcd.shape[0]//4, 4))
-        
-        intensity = pcd[:, -1]
-        points = pcd[:, :-1]
-        
-        point_list.points = o3d.utility.Vector3dVector(points)
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) +'_'+'.ply'
+        lidar.save_to_disk(os.path.join(self.dataset_path),'/liDAR/',str(self.junction_id),file_name)
 
     def spawn_nv(self, n):
         for i in range(n):
@@ -119,7 +114,9 @@ class SCENARIO:
         pass
     
     def junctio_lidar_listen(self):
-        pass
+        for i in range(1,7):
+            self.junction_id = i
+            self.junction_list[i-1].listen(self.lidar_callback)
 
     def main(self, synchronous=True):
         self.set_world(synchronous)
