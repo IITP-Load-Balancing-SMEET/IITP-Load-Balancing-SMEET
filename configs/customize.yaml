@@ -5,7 +5,8 @@ Dataset:
 
 Scenario:
   type: 'merge1'
-  NV_num : 5 # Neighbor Vehicle
-  Jucntio_LiDAR_use : False # Junction LiDAR
+  num_nv : 5 # Neighbor vehicle around EGO
+  weather_key: 0
+  junction_lidar : False # Junction LiDAR
 
   

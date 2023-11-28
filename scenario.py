@@ -9,6 +9,7 @@ class SCENARIO:
     def __init__(self, yaml_path='./configs'):
         self.junction_list=[]
         self.actor_list = []
+        self.nv_list = []
 
         self.client = carla.Client('localhost', 2000)
         self.world = self.client.load_world('Town04')
@@ -25,9 +26,11 @@ class SCENARIO:
         self.dataset_path = self.custom_config['Dataset']['path']
         self.save = self.custom_config['Dataset']['save']
         self.show = self.custom_config['Dataset']['show']
-        
-        self.nv_num = self.custom_config['Scenario']['NV_num']
-        self.Jucntio_LiDAR_use = self.custom_config['Scenario']['Jucntio_LiDAR_use']
+
+        self.type = self.custom_config['Scenario']['type']
+        self.num_nv = self.custom_config['Scenario']['num_nv']
+        self.weather_key = self.custom_config['Scenario']['weather_key']
+        self.junction_lidar = self.custom_config['Scenario']['junction_lidar']
         
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
@@ -92,9 +95,9 @@ class SCENARIO:
             junction 6 = x: 202 y: 247
         '''
         lidar_bp = self.world.get_blueprint_library().find('sensor.lidar.ray_cast')
-        lidar_bp.set_attribute('channerls',int(self.sensor_config['channel']))
-        lidar_bp.set_attribute('channerls',int(self.sensor_config['points_per_second']))
-        lidar_bp.set_attribute('channerls',int(self.sensor_config['rotation_frequency']))
+        lidar_bp.set_attribute('channels',int(self.sensor_config['channel']))
+        lidar_bp.set_attribute('channels',int(self.sensor_config['points_per_second']))
+        lidar_bp.set_attribute('channels',int(self.sensor_config['rotation_frequency']))
         
         junction_lidar_1 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=170, z=3)))
         junction_lidar_2 = self.world.spawn_actor(lidar_bp,carla.Transform(carla.Location(x=312, y=247, z=3)))
@@ -110,21 +113,43 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_5)
         self.junction_list.append(junction_lidar_6)
 
-    def platooning(self):
-        pass
+    def spawn_nv(self): # platooning
+        self.platoon_manager = self.traffic_manager = self.client.get_trafficmanager()
+
+        choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
+                  'merge2': self.map.get_waypoint_xodr(road_id=1194, lane_id=2, s=53.86).transform,
+                  'merge3': self.map.get_waypoint_xodr(road_id=1080, lane_id=2, s=75.18).transform,
+                  'merge4': self.map.get_waypoint_xodr(road_id=779, lane_id=2, s=50.61).transform,
+                  'split1': self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=103.35).transform,
+                  'split2': self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=26.95).transform,
+                  'split3': self.map.get_waypoint_xodr(road_id=47, lane_id=-4, s=86.03).transform,
+                  'split4': self.map.get_waypoint_xodr(road_id=1076, lane_id=2, s=66.25).transform}
+        
+        spawn_point = choice[self.type]
+
+        for _ in range(self.num_nv):
+            vehicle_bp = random.choice(self.bp.filter('vehicle.*.*'))
+            platoon = self.world.try_spawn_actor(vehicle_bp, spawn_point)
+
+            if platoon is not None:
+                self.platoon_manager.distance_to_leading_vehicle(temp_vehicle, 5.0)
+                spawn_point.location.x += 5.0
+                self.nv_list.append(platoon)
+            
+        [platoon.set_autopilot(True) for platoon in self.nv_list[::-1]]
     
-    def junctio_lidar_listen(self):
+    def junction_lidar_listen(self):
         for i in range(1,7):
             self.junction_id = i
             self.junction_list[i-1].listen(self.lidar_callback)
 
     def main(self, synchronous=True):
         self.set_world(synchronous)
-        self.set_weatehr(key=0)
+        self.set_weatehr(key=self.weather_key)
         self.set_traffic_manger(synchronous)
 
-        if self.nv_num != 0:
-            # self.spawn_nv(self.nv_num) 
-            pass
-        if self.Jucntio_LiDAR_use is True:
+        if self.num_nv != 0:
+            self.spawn_nv() 
+    
+        if self.junction_lidar is True:
             self.junction_lidar_spawn()

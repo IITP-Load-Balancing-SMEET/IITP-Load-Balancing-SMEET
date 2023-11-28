@@ -41,25 +41,26 @@ class EGO(SCENARIO):
         self.radar_data = []
 
     def spawn_ego(self, spawn_point='random'):
-        # choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
-        #           'merge2': self.map.get_waypoint_xodr(road_id=1194, lane_id=2, s=53.86).transform,
-        #           'merge3': self.map.get_waypoint_xodr(road_id=1080, lane_id=2, s=75.18).transform,
-        #           'merge4': self.map.get_waypoint_xodr(road_id=779, lane_id=2, s=50.61).transform,
-        #           'split1': self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=103.35).transform,
-        #           'split2': self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=26.95).transform,
-        #           'split3': self.map.get_waypoint_xodr(road_id=47, lane_id=-4, s=86.03).transform,
-        #           'split4': self.map.get_waypoint_xodr(road_id=1076, lane_id=2, s=66.25).transform,
-        #           'junction1':self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-        #           'junction2': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-        #           'junction3': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-        #           'junction4': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-        #           'junction5': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-        #           'random': np.random.choice(self.map.get_spawn_points())}
+        choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
+                  'merge2': self.map.get_waypoint_xodr(road_id=1194, lane_id=2, s=53.86).transform,
+                  'merge3': self.map.get_waypoint_xodr(road_id=1080, lane_id=2, s=75.18).transform,
+                  'merge4': self.map.get_waypoint_xodr(road_id=779, lane_id=2, s=50.61).transform,
+                  'split1': self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=103.35).transform,
+                  'split2': self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=26.95).transform,
+                  'split3': self.map.get_waypoint_xodr(road_id=47, lane_id=-4, s=86.03).transform,
+                  'split4': self.map.get_waypoint_xodr(road_id=1076, lane_id=2, s=66.25).transform,
+                  'junction1':self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'junction2': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'junction3': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'junction4': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'junction5': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'junction6': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
+                  'random': np.random.choice(self.map.get_spawn_points())}
     
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
         
         #self.ego = self.world.spawn_actor(ego_bp, choice[spawn_point])
-        self.ego = self.world.spawn_actor(ego_bp, np.random.choice(self.map.get_spawn_points()))
+        self.ego = self.world.spawn_actor(ego_bp, choice(self.map.get_spawn_points()))
         
         self.ego.set_autopilot(True)
 
@@ -177,9 +178,11 @@ class EGO(SCENARIO):
 
         while not self.img_right.empty() and img_right is None:
             img_right = self.img_right.get_nowait()
+            rgb_timestamp = img_right.timestamp
             
         while not self.depth_img.empty() and depth_img is None:
             depth_img = self.depth_img.get_nowait()
+            d_timestamp = depth_img.timestamp
 
         if (img_front is not None) and (img_left is not None) and (img_right is not None) and (depth_img is not None):
             img_front = np.reshape(np.copy(img_front.raw_data), (self.height, self.width, 4))
@@ -196,8 +199,8 @@ class EGO(SCENARIO):
                 cv2.imshow('images', all_img)
                 
             if self.save:
-                cv2.imwrite(self.dataset_path + f"/images/depth/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", depth_img)
-                cv2.imwrite(self.dataset_path + f"/images/rgb/{int(self.world.get_snapshot().timestamp.elapsed_seconds):010d}.png", rgb_img)
+                cv2.imwrite(self.dataset_path + f"/images/depth/{int(d_timestamp)}.png", depth_img)
+                cv2.imwrite(self.dataset_path + f"/images/rgb/{int(rgb_timestamp):010d}.png", rgb_img)
     
     def imu_callback(self, imu):
         acc = imu.accelerometer
@@ -262,6 +265,8 @@ class EGO(SCENARIO):
             # The 0.25 adjusts a bit the distance so the dots can
             # be properly seen
             fw_vec = carla.Vector3D(x=detect.depth - 0.25)
+            fw_vel = detect.velocity
+
             carla.Transform(carla.Location(),
                             carla.Rotation(pitch=current_rot.pitch + alt,
                                            yaw=current_rot.yaw + azi,
@@ -270,7 +275,7 @@ class EGO(SCENARIO):
             self.world.debug.draw_point(
                 radar.transform.location + fw_vec,
                 size=0.075,
-                life_time=0.06,
+                life_time=0.05,
                 persistent_lines=False,
                 color=carla.Color(255, 0, 0))
             
@@ -278,7 +283,8 @@ class EGO(SCENARIO):
                 self.radar_data.append({'timestamp': self.world.get_snapshot().timestamp.elapsed_seconds,
                                         'x' : fw_vec.x,
                                         'y' : fw_vec.y,
-                                        'z' : fw_vec.z})
+                                        'z' : fw_vec.z,
+                                        'vel' : fw_vel})
 
     def update_view(self):
         try:
@@ -301,7 +307,7 @@ class EGO(SCENARIO):
             radar_df.to_excel(writer, sheet_name='RADAR')
 
     def main(self):
-        super().main()
+        super().main(synchronous=True)
         
         self.spawn_ego()
         self.spawn_camera()
