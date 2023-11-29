@@ -6,8 +6,9 @@ Dataset:
 Scenario:
   type: 'merge1'
   weather_key: 0
+  max_vehicles: 30
   junction_lidar : False # Junction LiDAR
 
 NV:
   num_nv : 5 # Neighbor vehicle around EGO
-  aggressive_car_percentage : 0.8 
+  aggressive_car_percentage : 30 # 30 percent

@@ -44,27 +44,17 @@ class EGO(SCENARIO):
         self.radar_data = []
 
 
-    def spawn_ego(self, spawn_point='random'):
+    def spawn_ego(self):
         choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
                   'merge2': self.map.get_waypoint_xodr(road_id=1194, lane_id=2, s=53.86).transform,
-                  'merge3': self.map.get_waypoint_xodr(road_id=1080, lane_id=2, s=75.18).transform,
-                  'merge4': self.map.get_waypoint_xodr(road_id=779, lane_id=2, s=50.61).transform,
                   'split1': self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=103.35).transform,
                   'split2': self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=26.95).transform,
-                  'split3': self.map.get_waypoint_xodr(road_id=47, lane_id=-4, s=86.03).transform,
-                  'split4': self.map.get_waypoint_xodr(road_id=1076, lane_id=2, s=66.25).transform,
-                  'junction1':self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-                  'junction2': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-                  'junction3': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-                  'junction4': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-                  'junction5': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
-                  'junction6': self.map.get_waypoint_xodr(road_id=0.0, lane_id=0.0, s=0.0).transform,
                   'random': np.random.choice(self.map.get_spawn_points())}
     
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
         
-        #self.ego = self.world.spawn_actor(ego_bp, choice[spawn_point])
-        self.ego = self.world.spawn_actor(ego_bp, choice(self.map.get_spawn_points()))
+        self.ego = self.world.spawn_actor(ego_bp, choice[self.type])
+        #self.ego = self.world.spawn_actor(ego_bp, choice(self.map.get_spawn_points()))
         
         self.ego.set_autopilot(True)
 
@@ -160,7 +150,7 @@ class EGO(SCENARIO):
         
         radar_ego = self.world.spawn_actor(radar_bp,
                                            radar_transform,
-                                           attach_to=self.ego, 
+                                           attach_to=self.ego,
                                            attachment_type=carla.AttachmentType.Rigid)
 
         radar_ego.listen(self.radar_callback)
@@ -332,7 +322,7 @@ class EGO(SCENARIO):
         self.spawn_radar()
         
         self.set_traffic_manger()
-        super().junction_lidar_listen()
+        
         while True:
             self.world.tick()
             self.update_view()
@@ -349,10 +339,12 @@ class EGO(SCENARIO):
         
         self.set_world(synchronous=False)
         destroy_commands1 = [carla.command.DestroyActor(actor.id) for actor in self.actor_list]
-        destroy_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.junction_list]
+        destroy_commands2 = [carla.command.DestroyActor(actor.id) for actor in self.nv_list]
+        destroy_commands3 = [carla.command.DestroyActor(actor.id) for actor in self.junction_list]
         
         self.client.apply_batch(destroy_commands1)
         self.client.apply_batch(destroy_commands2)
+        self.client.apply_batch(destroy_commands3)
             
 if __name__ == '__main__':
     try:
