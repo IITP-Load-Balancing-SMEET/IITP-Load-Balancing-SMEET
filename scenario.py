@@ -49,32 +49,32 @@ class SCENARIO:
             os.path.join(self.dataset_path), "/liDAR/", str(self.junction_id), file_name
         )
 
-    def spawn_nv(self, n, per):
-        agg_num = int(n * per)
-        ego_nv = self.bp.find("vehicle.lincoln.mkz_2017")
+    # def spawn_nv(self, n, per):
+    #     agg_num = int(n * per)
+    #     ego_nv = self.bp.find("vehicle.lincoln.mkz_2017")
 
-        for i in range(n):
-            if i < agg_num:
-                nv = self.world.spawn_actor(
-                    ego_nv, np.random.choice(self.map.get_spawn_points())
-                )
-                nv.set_autopilot(True)
-                self.traffic_manager.vehicle_percentage_speed_difference(nv, -20.0)
-                self.traffic_manager.auto_lane_change(True)
-                self.traffic_manager.ignore_lights_percentage(30)
-                self.traffic_manager.ignore_vehicles_percentage(30)
-                self.actor_list.append(nv)
+    #     for i in range(n):
+    #         if i < agg_num:
+    #             nv = self.world.spawn_actor(
+    #                 ego_nv, np.random.choice(self.map.get_spawn_points())
+    #             )
+    #             nv.set_autopilot(True)
+    #             self.traffic_manager.vehicle_percentage_speed_difference(nv, -20.0)
+    #             self.traffic_manager.auto_lane_change(True)
+    #             self.traffic_manager.ignore_lights_percentage(30)
+    #             self.traffic_manager.ignore_vehicles_percentage(30)
+    #             self.actor_list.append(nv)
 
-            else:
-                nv = self.world.spawn_actor(
-                    ego_nv, np.random.choice(self.map.get_spawn_points())
-                )
-                nv.set_autopilot(True)
-                self.traffic_manager.vehicle_percentage_speed_difference(nv, 80.0)
-                self.traffic_manager.auto_lane_change(True)
-                self.traffic_manager.ignore_lights_percentage(0)
-                self.traffic_manager.ignore_vehicles_percentage(0)
-                self.actor_list.append(nv)
+    #         else:
+    #             nv = self.world.spawn_actor(
+    #                 ego_nv, np.random.choice(self.map.get_spawn_points())
+    #             )
+    #             nv.set_autopilot(True)
+    #             self.traffic_manager.vehicle_percentage_speed_difference(nv, 80.0)
+    #             self.traffic_manager.auto_lane_change(True)
+    #             self.traffic_manager.ignore_lights_percentage(0)
+    #             self.traffic_manager.ignore_vehicles_percentage(0)
+    #             self.actor_list.append(nv)
 
     def set_world(self, synchronous=True):
         settings = self.world.get_settings()
