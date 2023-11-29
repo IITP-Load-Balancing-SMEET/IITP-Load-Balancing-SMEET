@@ -35,10 +35,14 @@ class EGO(SCENARIO):
         self.img_right = queue.Queue(maxsize=1)
         self.depth_img = queue.Queue(maxsize=1)
 
+        # Near Vehicle
+        self.Near_vehicle_list=[]
+
         # Log system
         self.imu_data = []
         self.gnss_data = []
         self.radar_data = []
+
 
     def spawn_ego(self, spawn_point='random'):
         choice = {'merge1': self.map.get_waypoint_xodr(road_id=1097, lane_id=2, s=62.54).transform,
@@ -285,6 +289,16 @@ class EGO(SCENARIO):
                                         'y' : fw_vec.y,
                                         'z' : fw_vec.z,
                                         'vel' : fw_vel})
+
+    def Near_vehicle(self):
+        ego_location =self.actor_list[-1].get_location()
+        for i in range(len(self.actor_list)-1) :
+            temp_location = actor = self.actor_list[i].get_location()
+            distance = math.sqrt(math.pow((ego_location.x-temp_location.x,2)+(ego_location.y-temp_location.y,2)))
+            if distance < 50 :
+                self.Near_vehicle_list.append(self.actor_list[i])
+
+        
 
     def update_view(self):
         try:

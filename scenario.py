@@ -157,6 +157,7 @@ class SCENARIO:
             self.junction_id = i
             self.junction_list[i-1].listen(self.lidar_callback)
 
+
     def main(self, synchronous=True):
         self.set_world(synchronous)
         self.set_weatehr(key=self.weather_key)
