@@ -306,6 +306,8 @@ class EGO(SCENARIO):
             gnss_df.to_excel(writer, sheet_name='GNSS')
             radar_df.to_excel(writer, sheet_name='RADAR')
 
+
+
     def main(self):
         super().main(synchronous=True)
         
@@ -316,7 +318,7 @@ class EGO(SCENARIO):
         self.spawn_radar()
         
         self.set_traffic_manger()
-        
+        super().junction_lidar_listen()
         while True:
             self.world.tick()
             self.update_view()
