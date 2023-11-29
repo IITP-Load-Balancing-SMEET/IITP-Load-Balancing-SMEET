@@ -4,7 +4,7 @@ Dataset:
   show: True # whether show images or not
 
 Scenario:
-  type: 'merge1'
+  type: 'split1'
   weather_key: 0
   max_vehicles: 30
   junction_lidar : False # Junction LiDAR

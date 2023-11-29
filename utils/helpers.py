@@ -1,11 +1,18 @@
 import yaml, argparse
 
+
 def arg_parse():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', type=str, default="/home/smeet/IITP-Load-Balancing-SMEET/HS/configs/sensor_configs.yaml", help='Path of the sensor configurations yaml file.')
+    parser.add_argument(
+        "--config_path",
+        type=str,
+        default="/home/smeet/IITP-Load-Balancing-SMEET/HS/configs/sensor_configs.yaml",
+        help="Path of the sensor configurations yaml file.",
+    )
 
     args = parser.parse_args()
     return args
+
 
 def parse_config_yaml(file_path):
     """
