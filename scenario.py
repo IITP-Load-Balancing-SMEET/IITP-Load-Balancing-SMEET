@@ -10,7 +10,6 @@ class SCENARIO:
         self.junction_list=[]
         self.actor_list = []
         self.nv_list = []
-
         self.client = carla.Client('localhost', 2000)
         self.world = self.client.load_world('Town04')
         self.spectator = self.world.get_spectator()
@@ -28,10 +27,12 @@ class SCENARIO:
         self.show = self.custom_config['Dataset']['show']
 
         self.type = self.custom_config['Scenario']['type']
-        self.num_nv = self.custom_config['Scenario']['num_nv']
         self.weather_key = self.custom_config['Scenario']['weather_key']
         self.junction_lidar = self.custom_config['Scenario']['junction_lidar']
         
+        self.num_nv = self.custom_config['NV']['num_nv']
+        self.aggressive_car_percenatge = self.custom_config['NV']['aggressive_car_percentage']
+
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
     def lidar_callback(self, lidar):
@@ -39,13 +40,27 @@ class SCENARIO:
         file_name = str(timestamp) +'_'+'.ply'
         lidar.save_to_disk(os.path.join(self.dataset_path),'/liDAR/',str(self.junction_id),file_name)
 
-    def spawn_nv(self, n):
+    def spawn_nv(self, n, per):
+        agg_num =int(n * per)
+        ego_nv = self.bp.find('vehicle.lincoln.mkz_2017')
         for i in range(n):
-            ego_nv = self.bp.find('vehicle.lincoln.mkz_2017')
-            nv = self.world.spawn_actor(ego_nv, np.random.choice(self.map.get_spawn_points()))
-            nv.set_autopilot(True)
+            if i < agg_num:
+                nv = self.world.spawn_actor(ego_nv, np.random.choice(self.map.get_spawn_points()))
+                nv.set_autopilot(True)
+                self.traffic_manager.vehicle_percentage_speed_difference(nv,-20.0)
+                self.traffic_manager.auto_lane_change(True)
+                self.traffic_manager.ignore_lights_percentage(30)
+                self.traffic_manager.ignore_vehicles_percentage(30)
+                self.actor_list.append(nv)
+            else:
+                nv = self.world.spawn_actor(ego_nv, np.random.choice(self.map.get_spawn_points()))
+                nv.set_autopilot(True)
+                self.traffic_manager.vehicle_percentage_speed_difference(nv,80.0)
+                self.traffic_manager.auto_lane_change(True)
+                self.traffic_manager.ignore_lights_percentage(0)
+                self.traffic_manager.ignore_vehicles_percentage(0)
+                self.actor_list.append(nv)
 
-            self.actor_list.append(nv)
 
     def set_world(self, synchronous=True):
         settings = self.world.get_settings()
@@ -59,7 +74,7 @@ class SCENARIO:
         3 - WetNoon        4 - WetCloudyNoon     5 - MidRainyNoon\\
         6 - HardRainNoon   7 - SoftRainNoon      8 - ClearSunset\\
         9 - CloudySunset   10 - WetSunset        11 - WetCloudySunset\\
-        12 - MidRainSunset 13 - HardRainSunset   14 - SoftRainSunset\\
+        12 - MidRainSunset 1p3 - HardRainSunset   14 - SoftRainSunset\\
         '''
         weather = {0: carla.WeatherParameters.Default, 1: carla.WeatherParameters.ClearNoon, 2: carla.WeatherParameters.CloudyNoon,
                    3: carla.WeatherParameters.WetNoon, 4: carla.WeatherParameters.WetCloudyNoon, 5: carla.WeatherParameters.MidRainyNoon,
@@ -74,7 +89,6 @@ class SCENARIO:
         self.traffic_manager.set_synchronous_mode(True)
         
         spawn_points = self.world.get_map().get_spawn_points()
-
         max_vehicles = min([30, len(spawn_points)])
         
         for _, spawn_point in enumerate(random.sample(spawn_points, max_vehicles)):
@@ -149,7 +163,7 @@ class SCENARIO:
         self.set_traffic_manger(synchronous)
 
         if self.num_nv != 0:
-            self.spawn_nv() 
+            self.spawn_nv(self.num_nv,self.aggressive_car_percenatge) 
     
         if self.junction_lidar is True:
             self.junction_lidar_spawn()
