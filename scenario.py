@@ -41,40 +41,13 @@ class SCENARIO:
 
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
-    def lidar_callback1(self, lidar):
+    def lidar_callback(self, lidar,id):
         timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
+        file_name = str(timestamp) + "_"+str(id) + ".ply"
         lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/1/" , file_name
+            os.path.join(self.dataset_path), "/liDAR/",str(id),'/' , file_name
         )
-    def lidar_callback2(self, lidar):
-        timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
-        lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/2/" , file_name
-        )
-    def lidar_callback3(self, lidar):
-        timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
-        lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/3/" , file_name)
 
-    def lidar_callback4(self, lidar):
-        timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
-        lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/4/" , file_name)
-
-    def lidar_callback5(self, lidar):
-        timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
-        lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/5/" , file_name)
-    def lidar_callback6(self, lidar):
-        timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_1" + ".ply"
-        lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/6/" , file_name)
     # def spawn_nv(self, n, per):
     #     agg_num = int(n * per)
     #     ego_nv = self.bp.find("vehicle.lincoln.mkz_2017")
@@ -115,7 +88,7 @@ class SCENARIO:
         6 - HardRainNoon   7 - SoftRainNoon      8 - ClearSunset\\
         9 - CloudySunset   10 - WetSunset        11 - WetCloudySunset\\
         12 - MidRainSunset 1p3 - HardRainSunset   14 - SoftRainSunset\\
-        """
+        """`
         weather = {
             0: carla.WeatherParameters.Default,
             1: carla.WeatherParameters.ClearNoon,
@@ -196,22 +169,22 @@ class SCENARIO:
         lidar_bp.set_attribute("rotation_frequency", str(self.sensor_config["Junction_LiDAR"]["rotation_frequency"]))
 
         junction_lidar_1 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=312, y=170, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=312, y=-170, z=3))
         )
         junction_lidar_2 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=312, y=247, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=312, y=-247, z=3))
         )
         junction_lidar_3 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=257, y=170, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=257, y=-170, z=3))
         )
         junction_lidar_4 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=257, y=247, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=257, y=-247, z=3))
         )
         junction_lidar_5 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=202, y=170, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=202, y=-170, z=3))
         )
         junction_lidar_6 = self.world.spawn_actor(
-            lidar_bp, carla.Transform(carla.Location(x=202, y=247, z=3))
+            lidar_bp, carla.Transform(carla.Location(x=202, y=-247, z=3))
         )
 
         self.junction_list.append(junction_lidar_1)
@@ -220,14 +193,10 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_4)
         self.junction_list.append(junction_lidar_5)
         self.junction_list.append(junction_lidar_6)
+        for i in range(1,7):
+            self.junction_list[i].listen(lambda data : self.lidar_callback(data,i))
 
-    def junction_lidar_listen(self):
-        self.junction_lidar[0].listen(self.lidar_callback1)
-        self.junction_lidar[1].listen(self.lidar_callback2)
-        self.junction_lidar[2].listen(self.lidar_callback3)
-        self.junction_lidar[3].listen(self.lidar_callback4)
-        self.junction_lidar[4].listen(self.lidar_callback5)
-        self.junction_lidar[5].listen(self.lidar_callback6)
+
 
         
 
