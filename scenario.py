@@ -16,7 +16,7 @@ class SCENARIO:
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-
+        self.junction_id= 0
         self.sensor_config = parse_config_yaml(
             os.path.join(yaml_path, "sensor_configs.yaml")
         )
@@ -197,6 +197,7 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_6)
 
         for i in range(1, 7):
+            self.junction_id = i
             self.junction_list[i].listen(self.lidar_callback)
 
     def main(self, synchronous=True):
