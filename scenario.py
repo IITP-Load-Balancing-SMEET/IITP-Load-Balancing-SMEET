@@ -16,7 +16,6 @@ class SCENARIO:
         self.spectator = self.world.get_spectator()
         self.map = self.world.get_map()
         self.bp = self.world.get_blueprint_library()
-        self.junction_id= 0
         self.sensor_config = parse_config_yaml(
             os.path.join(yaml_path, "sensor_configs.yaml")
         )
@@ -42,13 +41,40 @@ class SCENARIO:
 
         print("Scenario start, Press Ctrl+C to stop the scenario")
 
-    def lidar_callback(self, lidar):
+    def lidar_callback1(self, lidar):
         timestamp = lidar.timestamp
-        file_name = str(timestamp) + "_" + ".ply"
+        file_name = str(timestamp) + "_1" + ".ply"
         lidar.save_to_disk(
-            os.path.join(self.dataset_path), "/liDAR/", str(self.junction_id), file_name
+            os.path.join(self.dataset_path), "/liDAR/1/" , file_name
         )
+    def lidar_callback2(self, lidar):
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) + "_1" + ".ply"
+        lidar.save_to_disk(
+            os.path.join(self.dataset_path), "/liDAR/2/" , file_name
+        )
+    def lidar_callback3(self, lidar):
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) + "_1" + ".ply"
+        lidar.save_to_disk(
+            os.path.join(self.dataset_path), "/liDAR/3/" , file_name)
 
+    def lidar_callback4(self, lidar):
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) + "_1" + ".ply"
+        lidar.save_to_disk(
+            os.path.join(self.dataset_path), "/liDAR/4/" , file_name)
+
+    def lidar_callback5(self, lidar):
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) + "_1" + ".ply"
+        lidar.save_to_disk(
+            os.path.join(self.dataset_path), "/liDAR/5/" , file_name)
+    def lidar_callback6(self, lidar):
+        timestamp = lidar.timestamp
+        file_name = str(timestamp) + "_1" + ".ply"
+        lidar.save_to_disk(
+            os.path.join(self.dataset_path), "/liDAR/6/" , file_name)
     # def spawn_nv(self, n, per):
     #     agg_num = int(n * per)
     #     ego_nv = self.bp.find("vehicle.lincoln.mkz_2017")
@@ -196,9 +222,15 @@ class SCENARIO:
         self.junction_list.append(junction_lidar_5)
         self.junction_list.append(junction_lidar_6)
 
-        for i in range(1, 7):
-            self.junction_id = i
-            self.junction_list[i].listen(self.lidar_callback)
+    def junction_lidar_listen(self):
+        self.junction_lidar[0].listen(self.lidar_callback1)
+        self.junction_lidar[1].listen(self.lidar_callback2)
+        self.junction_lidar[2].listen(self.lidar_callback3)
+        self.junction_lidar[3].listen(self.lidar_callback4)
+        self.junction_lidar[4].listen(self.lidar_callback5)
+        self.junction_lidar[5].listen(self.lidar_callback6)
+
+        
 
     def main(self, synchronous=True):
         self.set_world(synchronous)
