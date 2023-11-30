@@ -146,27 +146,27 @@ class SCENARIO:
             "merge1": self.map.get_waypoint_xodr(road_id=38, lane_id=-4, s=51.0).transform,
             "merge2": self.map.get_waypoint_xodr(road_id=40, lane_id=6, s=190.0).transform,
             "split1": self.map.get_waypoint_xodr(road_id=39, lane_id=6, s=40.0).transform,
-            "split2": self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=80.0).transform,
-            "random": np.random.choice(self.map.get_spawn_points())
+            "split2": self.map.get_waypoint_xodr(road_id=39, lane_id=-4, s=80.0).transform
         }
         
-        platoon_spawn_point = platoon_spawn_points[self.type]
+        if self.type in platoon_spawn_points:
+            platoon_spawn_point = platoon_spawn_points[self.type]
         
-        if self.type == 'merge1' or self.type == 'merge2':
-            platoon_spawn_point.location.z += 3.0
-        
-        elif self.type == 'split1' or self.type == 'split2':
-            platoon_spawn_point.location.z += 11.0
+            if self.type == 'merge1' or self.type == 'merge2':
+                platoon_spawn_point.location.z += 4.0
+            
+            elif self.type == 'split1' or self.type == 'split2':
+                platoon_spawn_point.location.z += 11.0
 
-        for _ in range(self.num_nv):
-            vehicle_bp = random.choice(self.bp.filter("vehicle.bmw.grandtourer"))
-            temp_vehicle = self.world.try_spawn_actor(vehicle_bp, platoon_spawn_point)
+            for _ in range(self.num_nv):
+                vehicle_bp = random.choice(self.bp.filter("vehicle.bmw.grandtourer"))
+                temp_vehicle = self.world.try_spawn_actor(vehicle_bp, platoon_spawn_point)
 
-            if temp_vehicle is not None:
-                platoon_spawn_point.location.x -= 5.0
-                self.traffic_manager.auto_lane_change(temp_vehicle, False)
-                self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, -20.0)
-                self.actor_list.append(temp_vehicle)
+                if temp_vehicle is not None:
+                    platoon_spawn_point.location.x -= 5.0
+                    self.traffic_manager.auto_lane_change(temp_vehicle, False)
+                    self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, -20.0)
+                    self.actor_list.append(temp_vehicle)
 
         for _, spawn_point in enumerate(random.sample(spawn_points, max_vehicles)):
             vehicle_bp = random.choice(self.bp.filter("vehicle.*.*"))
@@ -189,12 +189,11 @@ class SCENARIO:
         junction 5 = x: 202 y: 170
         junction 6 = x: 202 y: 247
         """
+        
         lidar_bp = self.world.get_blueprint_library().find("sensor.lidar.ray_cast")
-        lidar_bp.set_attribute("channels", int(self.sensor_config["channel"]))
-        lidar_bp.set_attribute("channels", int(self.sensor_config["points_per_second"]))
-        lidar_bp.set_attribute(
-            "channels", int(self.sensor_config["rotation_frequency"])
-        )
+        lidar_bp.set_attribute("channels", str(self.sensor_config["Junction_LiDAR"]["channel"]))
+        lidar_bp.set_attribute("points_per_second", str(self.sensor_config["Junction_LiDAR"]["points_per_second"]))
+        lidar_bp.set_attribute("rotation_frequency", str(self.sensor_config["Junction_LiDAR"]["rotation_frequency"]))
 
         junction_lidar_1 = self.world.spawn_actor(
             lidar_bp, carla.Transform(carla.Location(x=312, y=170, z=3))

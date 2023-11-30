@@ -52,15 +52,21 @@ class EGO(SCENARIO):
             "merge2": self.map.get_waypoint_xodr(road_id=44, lane_id=2, s=177.0).transform,
             "split1": self.map.get_waypoint_xodr(road_id=1101, lane_id=2, s=62.0).transform,
             "split2": self.map.get_waypoint_xodr(road_id=1191, lane_id=-2, s=4.0).transform,
+            "junction1": self.map.get_waypoint_xodr(road_id=880, lane_id=1, s=7.0).transform,
+            "junction2": self.map.get_waypoint_xodr(road_id=25, lane_id=-1, s=77.0).transform,
+            "junction3": self.map.get_waypoint_xodr(road_id=11, lane_id=1, s=22.0).transform,
+            "junction4": self.map.get_waypoint_xodr(road_id=26, lane_id=-1, s=17.0).transform,
+            "junction5": self.map.get_waypoint_xodr(road_id=10, lane_id=1, s=17.0).transform,
+            "junction6": self.map.get_waypoint_xodr(road_id=27, lane_id=-1, s=17.0).transform,
             "random": np.random.choice(self.map.get_spawn_points())
         }
 
         ego_bp = self.bp.find("vehicle.lincoln.mkz_2017")
 
-        if self.type == "merge1" or self.type == 'merge2':
+        if self.type != " split1" or self.type != 'split2':
             choice[self.type].location.z += 4.0
         
-        elif self.type == "split1" or self.type == 'split2':
+        else:
             choice[self.type].location.z += 11.0
             
         self.ego = self.world.spawn_actor(ego_bp, choice[self.type])
