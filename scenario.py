@@ -88,7 +88,7 @@ class SCENARIO:
         6 - HardRainNoon   7 - SoftRainNoon      8 - ClearSunset\\
         9 - CloudySunset   10 - WetSunset        11 - WetCloudySunset\\
         12 - MidRainSunset 1p3 - HardRainSunset   14 - SoftRainSunset\\
-        """`
+        """
         weather = {
             0: carla.WeatherParameters.Default,
             1: carla.WeatherParameters.ClearNoon,
@@ -114,6 +114,8 @@ class SCENARIO:
 
         spawn_points = self.world.get_map().get_spawn_points()
         max_vehicles = min([self.max_vehicles, len(spawn_points)])
+
+        div = int(max_vehicles*self.aggressive_car_percenatge)
 
         platoon_spawn_points = {
             "merge1": self.map.get_waypoint_xodr(road_id=38, lane_id=-4, s=51.0).transform,
@@ -144,11 +146,16 @@ class SCENARIO:
         for _, spawn_point in enumerate(random.sample(spawn_points, max_vehicles)):
             vehicle_bp = random.choice(self.bp.filter("vehicle.*.*"))
             temp_vehicle = self.world.try_spawn_actor(vehicle_bp, spawn_point)
-
-            if temp_vehicle is not None:
-                self.traffic_manager.ignore_lights_percentage(temp_vehicle, self.aggressive_car_percenatge)
-                self.traffic_manager.ignore_vehicles_percentage(temp_vehicle, self.aggressive_car_percenatge)
+            
+            if temp_vehicle is not None and _ < div:
+                self.traffic_manager.ignore_lights_percentage(temp_vehicle, 30)
+                self.traffic_manager.ignore_vehicles_percentage(temp_vehicle, 30)
                 self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, -20.0)
+                self.actor_list.append(temp_vehicle)
+            else:
+                self.traffic_manager.ignore_lights_percentage(temp_vehicle, 0)
+                self.traffic_manager.ignore_vehicles_percentage(temp_vehicle, 0)
+                self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, 60)
                 self.actor_list.append(temp_vehicle)
 
         [actor.set_autopilot(True) for actor in self.actor_list[::-1]]

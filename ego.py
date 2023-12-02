@@ -71,6 +71,7 @@ class EGO(SCENARIO):
             
         self.ego = self.world.spawn_actor(ego_bp, choice[self.type])
         self.ego.set_autopilot(True)
+        self.traffic_manager.vehicle_percentage_speed_difference(self.ego, 70.0)
 
         self.ego_list.append(self.ego)
 
