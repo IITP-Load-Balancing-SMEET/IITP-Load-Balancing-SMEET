@@ -155,7 +155,7 @@ class SCENARIO:
             else:
                 self.traffic_manager.ignore_lights_percentage(temp_vehicle, 0)
                 self.traffic_manager.ignore_vehicles_percentage(temp_vehicle, 0)
-                self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, 60)
+                self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, 70)
                 self.actor_list.append(temp_vehicle)
 
         [actor.set_autopilot(True) for actor in self.actor_list[::-1]]
