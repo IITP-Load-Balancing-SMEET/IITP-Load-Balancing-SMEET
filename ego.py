@@ -12,7 +12,7 @@ from utils.helpers import *
 class EGO(SCENARIO):
     def __init__(self):
         super().__init__()
-        
+
         self.ego_list = []
 
         # For all sensor synchronization
@@ -65,10 +65,10 @@ class EGO(SCENARIO):
 
         if self.type != " split1" or self.type != 'split2':
             choice[self.type].location.z += 4.0
-        
+
         else:
             choice[self.type].location.z += 11.0
-            
+
         self.ego = self.world.spawn_actor(ego_bp, choice[self.type])
         self.ego.set_autopilot(True)
 
@@ -239,11 +239,13 @@ class EGO(SCENARIO):
 
             if self.save:
                 cv2.imwrite(
-                    self.dataset_path + f"/images/depth/{int(d_timestamp)}.png",
+                    self.dataset_path +
+                    f"/images/depth/{int(d_timestamp)}.png",
                     depth_img,
                 )
                 cv2.imwrite(
-                    self.dataset_path + f"/images/rgb/{int(rgb_timestamp):010d}.png",
+                    self.dataset_path +
+                    f"/images/rgb/{int(rgb_timestamp):010d}.png",
                     rgb_img,
                 )
 
@@ -251,7 +253,8 @@ class EGO(SCENARIO):
         acc = imu.accelerometer
         gyro = imu.gyroscope
 
-        print(f"Acceleration [m/s^2] x: {acc.x:.6f} y: {acc.y:.6f}, z: {acc.z:.6f}\n")
+        print(
+            f"Acceleration [m/s^2] x: {acc.x:.6f} y: {acc.y:.6f}, z: {acc.z:.6f}\n")
         print(
             f"Angular rate [rad/s] x: {gyro.x:.6f} rad/sec, y: {gyro.y:.6f} rad/sec, z: {gyro.z:.6f} \n"
         )
@@ -315,7 +318,8 @@ class EGO(SCENARIO):
         print(f"Location [m] x: {x:.6f}, y:{y:.6f}, z:{z:.6f}\n")
 
         if self.save:
-            self.gnss_data.append({"timestamp": gnss.timestamp, "x": x, "y": y, "z": z})
+            self.gnss_data.append(
+                {"timestamp": gnss.timestamp, "x": x, "y": y, "z": z})
 
     def radar_callback(self, radar):
         current_rot = radar.transform.rotation
@@ -360,7 +364,7 @@ class EGO(SCENARIO):
     def Near_vehicle(self):
         ego_location = self.actor_list[-1].get_location()
         for i in range(len(self.actor_list) - 1):
-            temp_location  = self.actor_list[i].get_location()
+            temp_location = self.actor_list[i].get_location()
             distance = math.sqrt(
                 math.pow(
                     (ego_location.x - temp_location.x, 2)
@@ -374,9 +378,8 @@ class EGO(SCENARIO):
         try:
             transform = self.ego.get_transform()
             location = transform.location
-            rotation = transform.rotation
             self.spectator.set_transform(carla.Transform(
-                location + carla.Location(z=50.0), carla.Rotation(pitch=-90.0)))
+                location + carla.Location(z=80.0), carla.Rotation(pitch=-90.0)))
 
         except RuntimeError:
             raise KeyboardInterrupt
@@ -386,7 +389,8 @@ class EGO(SCENARIO):
         gnss_df = pd.DataFrame(self.gnss_data)
         radar_df = pd.DataFrame(self.radar_data)
 
-        excel_path = os.path.join(self.dataset_path, "others", "sensor_data.xlsx")
+        excel_path = os.path.join(
+            self.dataset_path, "others", "sensor_data.xlsx")
 
         with pd.ExcelWriter(excel_path, engine="xlsxwriter") as writer:
             imu_df.to_excel(writer, sheet_name="IMU")
@@ -408,6 +412,10 @@ class EGO(SCENARIO):
             self.world.tick()
             self.update_view()
             self.img_callback()
+
+            print('ego', self.ego.get_velocity())
+            for i in self.actor_list:
+                print('other', i.get_velocity())
 
             if self.show:
                 if cv2.waitKey(1) & 0xFF == ord("q"):
