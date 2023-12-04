@@ -88,6 +88,8 @@ class SCENARIO:
         spawn_points = self.world.get_map().get_spawn_points()
         max_vehicles = min([self.max_vehicles, len(spawn_points)])
 
+        div = int(max_vehicles*self.aggressive_car_percenatge)
+
         platoon_spawn_points = {
             "merge1": self.map.get_waypoint_xodr(road_id=38, lane_id=-4, s=51.0).transform,
             "merge2": self.map.get_waypoint_xodr(road_id=40, lane_id=6, s=190.0).transform,
@@ -128,6 +130,11 @@ class SCENARIO:
                     temp_vehicle, self.aggressive_car_percenatge)
                 self.traffic_manager.vehicle_percentage_speed_difference(
                     temp_vehicle, -20.0)
+                self.actor_list.append(temp_vehicle)
+            else:
+                self.traffic_manager.ignore_lights_percentage(temp_vehicle, 0)
+                self.traffic_manager.ignore_vehicles_percentage(temp_vehicle, 0)
+                self.traffic_manager.vehicle_percentage_speed_difference(temp_vehicle, 70)
                 self.actor_list.append(temp_vehicle)
 
         [actor.set_autopilot(True) for actor in self.actor_list[::-1]]
