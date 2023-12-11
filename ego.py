@@ -8,6 +8,8 @@ import pandas as pd
 from scenario import *
 from utils.helpers import *
 
+# FIXME: There are a lot of magic numbers in this file. Please fix them.
+
 # This is for Ego Vehicle Setting 
 class EGO(SCENARIO):
     # Ego Vehicle Setting
@@ -398,6 +400,7 @@ class EGO(SCENARIO):
             raise KeyboardInterrupt
     
     # Save data
+    # FIXME: The data are saved ones at destruction. Isn't there memory issue?
     def save_data(self):
         imu_df = pd.DataFrame(self.imu_data)
         gnss_df = pd.DataFrame(self.gnss_data)
