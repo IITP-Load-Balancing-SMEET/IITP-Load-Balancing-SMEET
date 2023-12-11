@@ -157,6 +157,7 @@ class SCENARIO:
         lidar_bp.set_attribute("rotation_frequency", str(
             self.sensor_config["Junction_LiDAR"]["rotation_frequency"]))
 
+        # TODO: More efficient way to spawn lidars - Using list?
         junction_lidar_1 = self.world.spawn_actor(
             lidar_bp, carla.Transform(carla.Location(x=312, y=-170, z=3))
         )
