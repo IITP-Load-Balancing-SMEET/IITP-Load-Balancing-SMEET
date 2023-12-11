@@ -10,6 +10,7 @@ from utils.helpers import *
 
 # This is for Ego Vehicle Setting 
 class EGO(SCENARIO):
+    # Ego Vehicle Setting
     def __init__(self):
         super().__init__()
 
@@ -46,6 +47,7 @@ class EGO(SCENARIO):
         self.gnss_data = []
         self.radar_data = []
 
+    # Traffic Manager Setting
     def spawn_ego(self):
         choice = {
             "merge1": self.map.get_waypoint_xodr(road_id=782, lane_id=-2, s=50.0).transform,
@@ -75,6 +77,7 @@ class EGO(SCENARIO):
 
         self.ego_list.append(self.ego)
 
+    # Camera Setting
     def spawn_camera(self):
         cam_bp = self.world.get_blueprint_library().find("sensor.camera.rgb")
         dcam_bp = self.world.get_blueprint_library().find("sensor.camera.depth")
@@ -135,7 +138,8 @@ class EGO(SCENARIO):
         self.ego_list.append(cam2_ego)
         self.ego_list.append(cam3_ego)
         self.ego_list.append(dcam_ego)
-
+    
+    # IMU Setting
     def spawn_imu(self):
         imu_bp = self.world.get_blueprint_library().find("sensor.other.imu")
 
@@ -153,6 +157,7 @@ class EGO(SCENARIO):
 
         self.ego_list.append(imu_ego)
 
+    # GNSS Setting
     def spawn_gnss(self):
         gnss_bp = self.world.get_blueprint_library().find("sensor.other.gnss")
 
@@ -170,6 +175,7 @@ class EGO(SCENARIO):
 
         self.ego_list.append(gnss_ego)
 
+    # Radar Setting
     def spawn_radar(self):
         radar_bp = self.world.get_blueprint_library().find("sensor.other.radar")
         radar_bp.set_attribute("sensor_tick", str(self.tick))
@@ -189,7 +195,8 @@ class EGO(SCENARIO):
         radar_ego.listen(self.radar_callback)
 
         self.ego_list.append(radar_ego)
-
+    
+    # Img callback
     def img_callback(self):
         img_front = None
         img_left = None
@@ -250,6 +257,7 @@ class EGO(SCENARIO):
                     rgb_img,
                 )
 
+    # IMU callback
     def imu_callback(self, imu):
         acc = imu.accelerometer
         gyro = imu.gyroscope
@@ -273,6 +281,7 @@ class EGO(SCENARIO):
                 }
             )
 
+    # GNSS callback
     def gnss_callback(self, gnss):
         lat = gnss.latitude
         lon = gnss.longitude
@@ -322,6 +331,7 @@ class EGO(SCENARIO):
             self.gnss_data.append(
                 {"timestamp": gnss.timestamp, "x": x, "y": y, "z": z})
 
+    # Radar callback
     def radar_callback(self, radar):
         current_rot = radar.transform.rotation
 
@@ -362,6 +372,7 @@ class EGO(SCENARIO):
                     }
                 )
 
+    # Near vehicle
     def Near_vehicle(self):
         ego_location = self.actor_list[-1].get_location()
         for i in range(len(self.actor_list) - 1):
@@ -375,6 +386,7 @@ class EGO(SCENARIO):
             if distance < 50:
                 self.Near_vehicle_list.append(self.actor_list[i])
 
+    # Update view
     def update_view(self):
         try:
             transform = self.ego.get_transform()
@@ -384,7 +396,8 @@ class EGO(SCENARIO):
 
         except RuntimeError:
             raise KeyboardInterrupt
-
+    
+    # Save data
     def save_data(self):
         imu_df = pd.DataFrame(self.imu_data)
         gnss_df = pd.DataFrame(self.gnss_data)
@@ -401,14 +414,17 @@ class EGO(SCENARIO):
     def main(self):
         super().main(synchronous=True)
 
+        # Spawn instance
         self.spawn_ego()
         self.spawn_camera()
         self.spawn_imu()
         self.spawn_gnss()
         self.spawn_radar()
 
+        # Traffic Manager Setting
         self.set_traffic_manger()
 
+        # Main loop
         while True:
             self.world.tick()
             self.update_view()
@@ -422,6 +438,7 @@ class EGO(SCENARIO):
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     raise KeyboardInterrupt
 
+    # Clean and save data
     def cleanup(self):  # __del__ is not working
         if self.save:
             self.save_data()
