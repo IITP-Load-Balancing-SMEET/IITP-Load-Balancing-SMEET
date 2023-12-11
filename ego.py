@@ -8,7 +8,7 @@ import pandas as pd
 from scenario import *
 from utils.helpers import *
 
-
+# This is for Ego Vehicle Setting 
 class EGO(SCENARIO):
     def __init__(self):
         super().__init__()
