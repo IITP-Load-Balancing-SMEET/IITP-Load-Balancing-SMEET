@@ -53,7 +53,7 @@ class SCENARIO:
         settings.synchronous_mode = synchronous
         settings.fixed_delta_seconds = 0.05
         self.world.apply_settings(settings)
-
+# 2023 12 13
     def set_weatehr(self, key: int = 0):
         """
         0 - Default        1 - ClearNoon         2 - CloudyNoon\\
